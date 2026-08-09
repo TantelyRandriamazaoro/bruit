@@ -66,7 +66,7 @@ Cooldown identity is a UUID in `localStorage` (`bruit_device_id`). Clearing site
 
 ## Map tiles
 
-Default style: Carto Positron (`basemaps.cartocdn.com`) — light, Apple Maps–adjacent OSM basemap, no API key. Swap `MAP_STYLE_URL` in `lib/constants.ts` if needed.
+Basemaps (Carto, no API key): Positron in light mode, Dark Matter in dark mode. Theme follows system by default; toggle from the map rail or About → Appearance.
 
 ## Scripts
 

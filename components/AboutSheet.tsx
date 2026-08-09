@@ -1,14 +1,33 @@
 "use client";
 
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
 type AboutSheetProps = {
   open: boolean;
   onClose: () => void;
 };
 
+const APPEARANCE_OPTIONS = [
+  { id: "system", label: "Auto" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+] as const;
+
 export function AboutSheet({ open, onClose }: AboutSheetProps) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   if (!open) {
     return null;
   }
+
+  const activeTheme = mounted ? (theme ?? "system") : "system";
 
   return (
     <div className="absolute inset-0 z-40 flex items-end justify-center sm:items-center">
@@ -58,7 +77,37 @@ export function AboutSheet({ open, onClose }: AboutSheetProps) {
           </button>
         </div>
 
-        <ul className="mb-4 overflow-hidden rounded-[1rem] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="mb-3 overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <div className="px-4 pb-1 pt-3 text-[0.72rem] font-semibold uppercase tracking-[0.04em] text-[var(--bruit-muted)]">
+            Appearance
+          </div>
+          <div
+            className="mx-3 mb-3 grid grid-cols-3 gap-1 rounded-[0.75rem] bg-[var(--bruit-fill)] p-1"
+            role="group"
+            aria-label="Appearance"
+          >
+            {APPEARANCE_OPTIONS.map((option) => {
+              const selected = activeTheme === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setTheme(option.id)}
+                  className={`cursor-pointer rounded-[0.6rem] px-2 py-1.5 text-[0.82rem] font-semibold transition-colors duration-200 ${
+                    selected
+                      ? "bg-[var(--bruit-surface)] text-[var(--bruit-ink)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+                      : "bg-transparent text-[var(--bruit-muted)]"
+                  }`}
+                  aria-pressed={selected}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <ul className="mb-4 overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           {[
             "Reports stay anonymous to your device ID",
             "Heatmap shows the last 7 days of activity",

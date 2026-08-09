@@ -9,13 +9,13 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AboutSheet } from "@/components/AboutSheet";
-import { BrandBar } from "@/components/BrandBar";
 import { HelpContacts } from "@/components/HelpContacts";
 import { InsightsView } from "@/components/InsightsView";
 import { MapChrome } from "@/components/MapChrome";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
 import { TabBar, type AppTab } from "@/components/TabBar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { MapApi } from "@/components/MapView";
 import { resolveAreaLabels } from "@/lib/area-labels";
 import {
@@ -332,7 +332,13 @@ export function HomeClient() {
 
       {activeTab === "help" ? <HelpContacts /> : null}
 
-      {showMapChrome ? <BrandBar /> : null}
+      {activeTab !== "map" && !aboutOpen ? (
+        <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
+          <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[0.95rem]">
+            <ThemeToggle />
+          </div>
+        </div>
+      ) : null}
 
       <MapChrome
         reportCount={recentReports.length}

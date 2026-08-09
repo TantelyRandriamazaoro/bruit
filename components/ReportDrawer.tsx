@@ -233,7 +233,7 @@ export function ReportDrawer({
             <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
               How Loud
             </p>
-            <div className="overflow-hidden rounded-[1rem] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               {NOISE_INTENSITIES.map((item, index) => {
                 const selected = intensity === item.id;
                 return (

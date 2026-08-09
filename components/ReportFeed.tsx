@@ -249,7 +249,7 @@ export function ReportFeed({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-28">
         {reports.length === 0 ? (
           <div className="mx-auto mt-10 max-w-sm px-2 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[var(--bruit-accent)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bruit-surface)] text-[var(--bruit-accent)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
                   d="M5 7h14M5 12h14M5 17h10"

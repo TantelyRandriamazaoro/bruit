@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { NOISE_INTENSITIES } from "@/lib/noise-meta";
 
 const LEVEL_SHORT: Record<(typeof NOISE_INTENSITIES)[number]["id"], string> = {
@@ -36,8 +37,8 @@ export function MapChrome({
 
   return (
     <>
-      {/* Top-right: noise level legend — Apple Maps / Weather restraint */}
-      <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
+      {/* Top-left: noise level legend — Apple Maps / Weather restraint */}
+      <div className="pointer-events-none absolute left-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
         <div
           className="bruit-chrome bruit-noise-legend"
           role="img"
@@ -73,6 +74,10 @@ export function MapChrome({
 
       {/* Right rail above tab bar */}
       <div className="pointer-events-none absolute right-3.5 z-20 flex flex-col items-end gap-2 bottom-[calc(var(--bruit-tabbar-space)+0.85rem)]">
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[0.95rem]">
+          <ThemeToggle />
+        </div>
+
         <button
           type="button"
           onClick={onOpenAbout}

@@ -544,7 +544,7 @@ export function InsightsView({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-28">
         {!hasSignal ? (
           <div className="mx-auto mt-10 max-w-sm px-2 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[var(--bruit-accent)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bruit-surface)] text-[var(--bruit-accent)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               <ChartGlyph />
             </div>
             <p className="text-[1.2rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
