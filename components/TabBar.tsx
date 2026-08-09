@@ -93,7 +93,7 @@ export function TabBar({
         </div>
       ) : null}
 
-      <div className="mb-2.5 flex w-full max-w-lg justify-start">
+      <div className="mb-2.5 flex w-full max-w-lg justify-end">
         <button
           type="button"
           onClick={onReport}

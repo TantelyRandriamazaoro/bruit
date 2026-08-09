@@ -72,8 +72,8 @@ export function MapChrome({
         </div>
       </div>
 
-      {/* Right rail above tab bar */}
-      <div className="pointer-events-none absolute right-3.5 z-20 flex flex-col items-end gap-2.5 bottom-[calc(var(--bruit-tabbar-space)+0.85rem)]">
+      {/* Top-right rail */}
+      <div className="pointer-events-none absolute right-3.5 top-0 z-20 flex flex-col items-end gap-2.5 pt-[max(0.7rem,env(safe-area-inset-top))]">
         <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <ThemeToggle />
         </div>
