@@ -45,10 +45,10 @@ function ActionCell({
       }`}
     >
       <span
-        className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${
+        className={`flex h-11 w-11 items-center justify-center rounded-full ${
           tone === "call"
-            ? "bg-[var(--bruit-call)]"
-            : "bg-[var(--bruit-accent)]"
+            ? "bg-[var(--bruit-call)] text-white"
+            : "bg-[var(--bruit-accent)] text-[var(--bruit-on-accent)]"
         }`}
         aria-hidden
       >

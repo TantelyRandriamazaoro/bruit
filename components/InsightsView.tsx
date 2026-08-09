@@ -55,7 +55,7 @@ const STATUS_TONE: Record<HotspotStatus, string> = {
 
 const INTENSITY_TINT: Record<NoiseIntensity, string> = {
   moderate: "#5ac8fa",
-  loud: "#007aff",
+  loud: "#32ade6",
   very_loud: "#ff9f0a",
   extreme: "#ff2d55",
 };
@@ -197,7 +197,7 @@ function HotspotDetail({
             <button
               type="button"
               onClick={onShowMap}
-              className="cursor-pointer rounded-full px-3 py-1.5 text-[1.02rem] font-semibold text-[var(--bruit-accent)] transition-colors duration-150 hover:bg-[rgba(0,122,255,0.08)]"
+              className="cursor-pointer rounded-full px-3 py-1.5 text-[1.02rem] font-semibold text-[var(--bruit-accent)] transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--bruit-accent)_8%,transparent)]"
             >
               {tCommon("map")}
             </button>

@@ -49,7 +49,7 @@ function TrailingButton({
       className={
         tone === "call"
           ? "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--bruit-call)] no-underline transition-colors duration-150 hover:bg-[rgba(52,199,89,0.12)] focus-visible:bg-[rgba(52,199,89,0.12)] focus-visible:outline-none active:bg-[rgba(52,199,89,0.18)]"
-          : "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--bruit-accent)] no-underline transition-colors duration-150 hover:bg-[rgba(0,122,255,0.1)] focus-visible:bg-[rgba(0,122,255,0.1)] focus-visible:outline-none active:bg-[rgba(0,122,255,0.16)]"
+          : "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--bruit-accent)] no-underline transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--bruit-accent)_10%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--bruit-accent)_10%,transparent)] focus-visible:outline-none active:bg-[color-mix(in_srgb,var(--bruit-accent)_16%,transparent)]"
       }
     >
       {children}
@@ -88,7 +88,7 @@ function StationRow({
             name: station.name,
             distance,
           })}
-          className="bruit-feed-row flex w-full min-h-11 cursor-pointer items-center text-left no-underline transition-colors duration-150 focus-visible:bg-[rgba(0,122,255,0.06)] focus-visible:outline-none"
+          className="bruit-feed-row flex w-full min-h-11 cursor-pointer items-center text-left no-underline transition-colors duration-150 focus-visible:bg-[color-mix(in_srgb,var(--bruit-accent)_6%,transparent)] focus-visible:outline-none"
         >
           <span className="min-w-0 flex-1 py-0.5">
             <span className="block truncate text-[1.05rem] font-normal tracking-[-0.01em] text-[var(--bruit-ink)]">

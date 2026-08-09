@@ -122,7 +122,7 @@ export function ReportDrawer({
             <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
               {t("howLoud")}
             </p>
-            <div className="overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="bruit-sheet-card">
               {NOISE_INTENSITIES.map((item, index) => {
                 const selected = intensity === item.id;
                 return (
@@ -133,7 +133,7 @@ export function ReportDrawer({
                     <button
                       type="button"
                       onClick={() => setIntensity(item.id)}
-                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors duration-150 hover:bg-black/[0.03]"
+                      className="bruit-intensity-row"
                     >
                       <span>
                         <span className="block text-[0.98rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
@@ -146,7 +146,7 @@ export function ReportDrawer({
                       <span
                         className={`flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
                           selected
-                            ? "border-[var(--bruit-accent)] bg-[var(--bruit-accent)] text-white"
+                            ? "border-[var(--bruit-accent)] bg-[var(--bruit-accent)] text-[var(--bruit-on-accent)]"
                             : "border-[var(--bruit-hairline-strong)]"
                         }`}
                         aria-hidden

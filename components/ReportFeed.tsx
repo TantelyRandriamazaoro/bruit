@@ -190,7 +190,7 @@ export function ReportFeed({
                             className="bruit-feed-row min-w-0 flex-1 cursor-pointer text-left transition-colors duration-150"
                             aria-expanded={expanded}
                           >
-                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
+                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--bruit-accent)_12%,transparent)] text-[var(--bruit-accent)]">
                               <NoiseCategoryIcon
                                 category={category}
                                 size={17}
@@ -245,7 +245,7 @@ export function ReportFeed({
                                   onClick={() => onSelectReport?.(report)}
                                   className="bruit-feed-row bruit-feed-row-nested w-full cursor-pointer text-left transition-colors duration-150"
                                 >
-                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.08)] text-[var(--bruit-accent)]">
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--bruit-accent)_8%,transparent)] text-[var(--bruit-accent)]">
                                     <NoiseCategoryIcon
                                       category={report.category}
                                       size={15}
@@ -288,7 +288,7 @@ export function ReportFeed({
                         onClick={() => onSelectReport?.(newest)}
                         className="bruit-feed-row w-full cursor-pointer text-left transition-colors duration-150"
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--bruit-accent)_12%,transparent)] text-[var(--bruit-accent)]">
                           <NoiseCategoryIcon
                             category={newest.category}
                             size={17}
