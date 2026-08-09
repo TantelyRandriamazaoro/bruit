@@ -24,6 +24,8 @@
   --bruit-sheet-border: rgba(255, 255, 255, 0.65);
   --bruit-scrim: rgba(0, 0, 0, 0.22);
   --bruit-success: #248a3d;
+  --bruit-call: #34c759;
+  --bruit-siren: #ff3b30;
   --bruit-danger: #d70015;
   --bruit-mark-bg: #1d1d1f;
   --bruit-mark-fg: #ffffff;
@@ -62,6 +64,8 @@
   --bruit-sheet-border: rgba(255, 255, 255, 0.12);
   --bruit-scrim: rgba(0, 0, 0, 0.55);
   --bruit-success: #30d158;
+  --bruit-call: #30d158;
+  --bruit-siren: #ff453a;
   --bruit-danger: #ff453a;
   --bruit-mark-bg: #f5f5f7;
   --bruit-mark-fg: #1d1d1f;
@@ -745,6 +749,196 @@ body {
   );
 }
 
+.bruit-history-days {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.55rem 1rem 0.55rem;
+  scrollbar-width: none;
+}
+
+.bruit-history-day-date {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: inherit;
+}
+
+.bruit-day-rhythm {
+  display: flex;
+  align-items: end;
+  gap: 0.12rem;
+  min-height: 4.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+}
+
+.bruit-day-rhythm::-webkit-scrollbar {
+  display: none;
+}
+
+.bruit-day-rhythm-cell {
+  display: flex;
+  min-width: 0.42rem;
+  flex: 1 0 0.42rem;
+  flex-direction: column;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.bruit-day-rhythm-track {
+  display: flex;
+  height: 4.25rem;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bruit-day-rhythm-bar {
+  width: 100%;
+  max-width: 0.38rem;
+  border-radius: 999px;
+  background: rgba(0, 122, 255, 0.28);
+  transition: height 180ms cubic-bezier(0.32, 0.72, 0, 1), background 160ms ease;
+}
+
+.bruit-day-rhythm-bar-active {
+  background: var(--bruit-accent);
+  box-shadow: 0 1px 6px rgba(0, 122, 255, 0.28);
+}
+
+.bruit-day-rhythm-bar-empty {
+  background: rgba(120, 120, 128, 0.16);
+  box-shadow: none;
+}
+
+.bruit-history-days::-webkit-scrollbar {
+  display: none;
+}
+
+.bruit-history-day {
+  display: flex;
+  min-width: 2.85rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  border: none;
+  border-radius: 0.95rem;
+  background: transparent;
+  padding: 0.4rem 0.3rem 0.35rem;
+  color: var(--bruit-muted);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.bruit-history-day-active {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--bruit-accent);
+}
+
+.bruit-history-day-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.bruit-history-day-dot {
+  height: 0.35rem;
+  width: 0.35rem;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.28);
+}
+
+.bruit-history-day-dot-hot {
+  background: var(--bruit-accent);
+}
+
+.bruit-history-slots {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.15rem 1rem 0.85rem;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.bruit-history-slots::-webkit-scrollbar {
+  display: none;
+}
+
+.bruit-history-slot {
+  display: flex;
+  width: 3.35rem;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0.5px solid transparent;
+  border-radius: 1rem;
+  background: rgba(120, 120, 128, 0.06);
+  padding: 0.55rem 0.3rem 0.5rem;
+  scroll-snap-align: center;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.bruit-history-slot-active {
+  border-color: rgba(0, 122, 255, 0.45);
+  background: rgba(0, 122, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+}
+
+.bruit-history-slot-track {
+  display: flex;
+  height: 3.4rem;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bruit-history-slot-bar {
+  width: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 45, 85, 0.95),
+    rgba(255, 159, 10, 0.85),
+    rgba(0, 122, 255, 0.75)
+  );
+  transition: height 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.bruit-history-slot-bar-empty {
+  background: rgba(120, 120, 128, 0.22);
+}
+
+.bruit-history-slot-time {
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--bruit-muted);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.bruit-history-slot-active .bruit-history-slot-time {
+  color: var(--bruit-accent);
+}
+
+.bruit-history-range {
+  width: 100%;
+  accent-color: var(--bruit-accent);
+  height: 1.25rem;
+}
+
 .bruit-sheet {
   border-radius: 1.15rem 1.15rem 0.85rem 0.85rem;
   background: var(--bruit-sheet);
@@ -773,6 +967,60 @@ body {
   width: 2.5rem !important;
   border-radius: 999px !important;
   background: var(--bruit-hairline) !important;
+}
+
+/* Apple Maps-style floating place card */
+.bruit-place-drawer {
+  left: 0.55rem;
+  right: 0.55rem;
+  bottom: max(0.55rem, env(safe-area-inset-bottom));
+  width: auto;
+  max-width: 26.5rem;
+  margin-inline: auto;
+  height: auto;
+  max-height: min(78dvh, 30rem);
+  border-radius: 1.75rem !important;
+  overflow: hidden;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dark .bruit-place-drawer {
+  box-shadow:
+    0 18px 56px rgba(0, 0, 0, 0.55),
+    0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.bruit-place-overlay {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.dark .bruit-place-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.bruit-place-actions,
+.bruit-place-details {
+  background: var(--bruit-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .bruit-place-actions,
+.dark .bruit-place-details {
+  background: var(--bruit-surface-elevated);
+  box-shadow: none;
+}
+
+.bruit-place-action:focus-visible {
+  outline: none;
+}
+
+.bruit-place-badge {
+  background: linear-gradient(180deg, #ff6259 0%, #ff3b30 48%, #d70015 100%);
+  box-shadow:
+    0 1px 2px rgba(255, 59, 48, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .bruit-icon-btn {
@@ -936,7 +1184,11 @@ body {
   .bruit-hotspot-card,
   .bruit-insight-day-bar,
   .bruit-insight-meter-fill,
-  .bruit-nav-back {
+  .bruit-nav-back,
+  .bruit-history-day,
+  .bruit-history-slot,
+  .bruit-history-slot-bar,
+  .bruit-day-rhythm-bar {
     animation: none !important;
     transition: none !important;
   }

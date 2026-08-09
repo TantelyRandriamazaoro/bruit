@@ -472,6 +472,36 @@ function intensityBreakdown(reports: NoiseReport[]): IntensityShare[] {
   }).filter((item) => item.count > 0);
 }
 
+export type ScopedReportInsights = {
+  total: number;
+  categories: HotspotCategoryShare[];
+  intensities: IntensityShare[];
+  loudShare: number;
+  peakHourLabel: string | null;
+  topCategory: HotspotCategoryShare | null;
+};
+
+/** Analytics for an arbitrary report slice (day, half-hour, etc.). */
+export function buildScopedReportInsights(
+  reports: NoiseReport[],
+): ScopedReportInsights {
+  const categories = categoryBreakdown(reports);
+  const intensities = intensityBreakdown(reports);
+  const loudCount = intensities
+    .filter((item) => item.id !== "moderate")
+    .reduce((sum, item) => sum + item.count, 0);
+  const total = reports.length;
+
+  return {
+    total,
+    categories,
+    intensities,
+    loudShare: total > 0 ? loudCount / total : 0,
+    peakHourLabel: peakHourFor(reports),
+    topCategory: categories[0] ?? null,
+  };
+}
+
 /** Scoped analytics for a single hotspot drill-down. */
 export function buildHotspotDetail(
   hotspot: NoiseHotspot,
