@@ -13,9 +13,11 @@ import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
 import { TabBar, type AppTab } from "@/components/TabBar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { WelcomeDrawer } from "@/components/WelcomeDrawer";
 import type { MapApi } from "@/components/MapView";
 import { resolveAreaLabels } from "@/lib/area-labels";
 import {
+  clearLastReportAt,
   getCooldownRemainingMs,
   setLastReportAt,
 } from "@/lib/cooldown";
@@ -25,11 +27,14 @@ import { filterLiveMapReports } from "@/lib/live-map";
 import type { SelectedPoliceStation } from "@/lib/police-stations";
 import {
   createNoiseReport,
+  deleteNoiseReport,
+  fetchMyReports,
   fetchRecentReports,
   filterReportsSince,
 } from "@/lib/reports";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { NoiseReport } from "@/lib/supabase/types";
+import { hasSeenWelcome, markWelcomeSeen } from "@/lib/welcome";
 
 const MapView = dynamic(
   () => import("@/components/MapView").then((m) => m.MapView),
@@ -51,14 +56,17 @@ const configured = isSupabaseConfigured();
 export function HomeClient() {
   const t = useTranslations("Status");
   const [reports, setReports] = useState<NoiseReport[]>([]);
+  const [myReports, setMyReports] = useState<NoiseReport[]>([]);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [selectedPoliceStation, setSelectedPoliceStation] =
     useState<SelectedPoliceStation | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("map");
@@ -70,6 +78,24 @@ export function HomeClient() {
   const [shellEl, setShellEl] = useState<HTMLDivElement | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const policeDrawerOpen = selectedPoliceStation !== null;
+  const overlayOpen = drawerOpen || policeDrawerOpen || welcomeOpen;
+
+  const syncCooldownFromMyReports = useCallback((mine: NoiseReport[]) => {
+    const newest = mine[0];
+    if (!newest) {
+      clearLastReportAt();
+      setCooldownMs(getCooldownRemainingMs());
+      return;
+    }
+
+    const createdAt = new Date(newest.created_at).getTime();
+    if (!Number.isFinite(createdAt)) {
+      return;
+    }
+
+    setLastReportAt(createdAt);
+    setCooldownMs(getCooldownRemainingMs());
+  }, []);
 
   const refreshReports = useCallback(async () => {
     if (!configured) {
@@ -83,6 +109,21 @@ export function HomeClient() {
     } catch (err) {
       console.error(err);
       setLoadError(t("loadError"));
+      return;
+    }
+
+    try {
+      const deviceId = getDeviceId();
+      if (!deviceId) {
+        setMyReports([]);
+        return;
+      }
+
+      const mine = await fetchMyReports(deviceId);
+      setMyReports(mine);
+    } catch (err) {
+      console.error(err);
+      setMyReports([]);
     }
   }, [configured, t]);
 
@@ -90,8 +131,16 @@ export function HomeClient() {
     const frame = window.requestAnimationFrame(() => {
       setCooldownMs(getCooldownRemainingMs());
       setHydrated(true);
+      if (!hasSeenWelcome()) {
+        setWelcomeOpen(true);
+      }
     });
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const dismissWelcome = useCallback(() => {
+    markWelcomeSeen();
+    setWelcomeOpen(false);
   }, []);
 
   useEffect(() => {
@@ -100,6 +149,15 @@ export function HomeClient() {
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!status) {
+      return;
+    }
+    const ms = status.tone === "success" ? 3400 : 5200;
+    const id = window.setTimeout(() => setStatus(null), ms);
+    return () => window.clearTimeout(id);
+  }, [status]);
 
   useEffect(() => {
     if (!configured || !hydrated) {
@@ -283,8 +341,60 @@ export function HomeClient() {
     [mapApi],
   );
 
-  const showMapChrome = activeTab === "map" && !policeDrawerOpen;
-  const tabHidden = policeDrawerOpen;
+  const handleDeleteReport = useCallback(
+    async (report: NoiseReport) => {
+      if (!configured || deletingReportId) {
+        return;
+      }
+
+      const deviceId = getDeviceId();
+      if (!deviceId) {
+        setStatus({
+          message: t("deleteFailed"),
+          tone: "error",
+        });
+        return;
+      }
+
+      setDeletingReportId(report.id);
+      setStatus(null);
+
+      try {
+        const result = await deleteNoiseReport({
+          deviceId,
+          reportId: report.id,
+        });
+
+        if (!result.ok) {
+          setStatus({
+            message: t("deleteFailed"),
+            tone: "error",
+          });
+          return;
+        }
+
+        const nextMine = myReports.filter((item) => item.id !== report.id);
+        setMyReports(nextMine);
+        setReports((prev) => prev.filter((item) => item.id !== report.id));
+        syncCooldownFromMyReports(nextMine);
+        setStatus({
+          message: t("deleted"),
+          tone: "success",
+        });
+      } catch (err) {
+        console.error(err);
+        setStatus({
+          message: t("deleteFailed"),
+          tone: "error",
+        });
+      } finally {
+        setDeletingReportId(null);
+      }
+    },
+    [configured, deletingReportId, myReports, syncCooldownFromMyReports, t],
+  );
+
+  const showMapChrome = activeTab === "map";
 
   return (
     <div
@@ -312,11 +422,14 @@ export function HomeClient() {
       {activeTab === "feed" ? (
         <ReportFeed
           reports={recentReports}
+          myReports={myReports}
           canReport={configured && cooldownMs <= 0}
+          deletingReportId={deletingReportId}
           onReport={openDrawer}
           onSelectReport={(report) => {
             openHotspotOnMap(report);
           }}
+          onDeleteReport={(report) => void handleDeleteReport(report)}
         />
       ) : null}
 
@@ -351,27 +464,19 @@ export function HomeClient() {
         onOpenAbout={() => setAboutOpen(true)}
       />
 
-      {!configured && activeTab === "map" && !drawerOpen && !policeDrawerOpen ? (
+      {!configured && activeTab === "map" && !overlayOpen ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-ink)]">
           {t("missingEnvBanner")}
         </div>
       ) : null}
 
-      {configured &&
-      loadError &&
-      activeTab === "map" &&
-      !drawerOpen &&
-      !policeDrawerOpen ? (
+      {configured && loadError && activeTab === "map" && !overlayOpen ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-danger)]">
           {loadError}
         </div>
       ) : null}
 
-      {locationError &&
-      !status &&
-      showMapChrome &&
-      !drawerOpen &&
-      !policeDrawerOpen ? (
+      {locationError && !status && showMapChrome && !overlayOpen ? (
         <div className="pointer-events-none absolute inset-x-4 z-20 mx-auto max-w-sm bottom-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+0.75rem)]">
           <div className="bruit-chrome rounded-2xl px-4 py-2.5 text-center text-sm text-[var(--bruit-muted)]">
             {locationError}
@@ -385,12 +490,10 @@ export function HomeClient() {
         onReport={openDrawer}
         cooldownMs={cooldownMs}
         busy={busy && !drawerOpen}
-        hidden={tabHidden}
         feedCount={recentReports.length}
-        statusMessage={
-          drawerOpen || policeDrawerOpen ? null : (status?.message ?? null)
-        }
+        statusMessage={overlayOpen ? null : (status?.message ?? null)}
         statusTone={status?.tone ?? "neutral"}
+        onDismissStatus={() => setStatus(null)}
       />
 
       <ReportDrawer
@@ -415,6 +518,12 @@ export function HomeClient() {
         open={aboutOpen}
         container={shellEl}
         onClose={() => setAboutOpen(false)}
+      />
+
+      <WelcomeDrawer
+        open={welcomeOpen}
+        container={shellEl}
+        onClose={dismissWelcome}
       />
     </div>
   );

@@ -12,6 +12,7 @@ export const LIVE_MAP_TTL_MS = 6 * 60 * 60 * 1000;
 export const LIVE_MAP_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const DEVICE_ID_KEY = "bruit_device_id";
 export const LAST_REPORT_AT_KEY = "bruit_last_report_at";
+export const WELCOME_SEEN_KEY = "bruit_welcome_seen";
 
 /** Antananarivo — fallback when geolocation is unavailable */
 export const DEFAULT_CENTER = {

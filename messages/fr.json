@@ -99,7 +99,13 @@
     "lookingUpArea": "Recherche du lieu…",
     "reportsCount": "{count, plural, one {# signalement} other {# signalements}}",
     "showOnMap": "Voir cette zone sur la carte",
-    "showOnMapShort": "Voir sur la carte"
+    "showOnMapShort": "Voir sur la carte",
+    "myReports": "Mes signalements",
+    "myReportsEmpty": "Les signalements de cet appareil apparaîtront ici.",
+    "nearby": "À proximité",
+    "deleteReport": "Supprimer le signalement",
+    "deleteConfirm": "Supprimer ce signalement ? Il disparaîtra de la carte et du fil d’activité.",
+    "deleting": "Suppression…"
   },
   "Insights": {
     "title": "Tendances",
@@ -228,6 +234,17 @@
     "bulletLiveMap": "La carte affiche les zones actives pendant environ six heures",
     "bulletLingering": "De nouveaux signalements à proximité maintiennent une zone active"
   },
+  "Welcome": {
+    "title": "Signalez le bruit à proximité",
+    "subtitle": "Partagez les nuisances sonores autour de vous et voyez où elles se produisent.",
+    "featureReportTitle": "Partagez ce que vous entendez",
+    "featureReportBody": "Enregistrez un bruit à proximité avec Signaler. Un signalement toutes les 30 minutes.",
+    "featureAuthoritiesTitle": "Appelez les autorités",
+    "featureAuthoritiesBody": "Trouvez les commissariats à proximité dans Aide et appelez si vous avez besoin d’aide.",
+    "featureAnonymousTitle": "Restez anonyme",
+    "featureAnonymousBody": "Les signalements utilisent un identifiant d’appareil privé, jamais votre nom.",
+    "continue": "Continuer"
+  },
   "Map": {
     "loading": "Chargement de la carte…",
     "failed": "Échec du chargement de la carte.",
@@ -258,8 +275,10 @@
     "allowLocation": "Autorisez la localisation pour signaler un bruit.",
     "rateLimited": "Vous pourrez signaler à nouveau dans {minutes} min.",
     "submitFailed": "Impossible d’envoyer ce signalement. Réessayez.",
-    "reported": "Signalement envoyé. Merci.",
-    "networkError": "Une erreur réseau est survenue lors de l’envoi. Réessayez."
+    "reported": "Signalement envoyé",
+    "networkError": "Une erreur réseau est survenue lors de l’envoi. Réessayez.",
+    "deleted": "Signalement supprimé.",
+    "deleteFailed": "Impossible de supprimer ce signalement. Réessayez."
   },
   "Time": {
     "justNow": "À l’instant",

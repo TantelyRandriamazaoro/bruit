@@ -1,3 +1,4 @@
+import type { AllPaintProperties } from "@maplibre/maplibre-gl-style-spec";
 import type { Map } from "maplibre-gl";
 
 /**
@@ -62,7 +63,12 @@ type Palette = typeof GOOGLE_LIGHT | typeof GOOGLE_DARK;
 
 const ROAD_LAYER_RE = /^(road_|tunnel_|bridge_|rail)/;
 
-function setPaint(map: Map, id: string, prop: string, value: unknown) {
+function setPaint<K extends keyof AllPaintProperties>(
+  map: Map,
+  id: string,
+  prop: K,
+  value: AllPaintProperties[K],
+) {
   try {
     if (!map.getLayer(id)) {
       return;

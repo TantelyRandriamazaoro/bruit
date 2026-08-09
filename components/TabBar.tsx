@@ -1,6 +1,15 @@
 "use client";
 
-import { ChartColumn, Flag, List, Map as MapIcon, Phone } from "lucide-react";
+import {
+  Check,
+  ChartColumn,
+  CircleAlert,
+  Flag,
+  List,
+  Map as MapIcon,
+  Phone,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -19,6 +28,7 @@ type TabBarProps = {
   busy?: boolean;
   statusMessage?: string | null;
   statusTone?: "neutral" | "success" | "error";
+  onDismissStatus?: () => void;
   feedCount?: number;
   hidden?: boolean;
 };
@@ -31,10 +41,12 @@ export function TabBar({
   busy = false,
   statusMessage,
   statusTone = "neutral",
+  onDismissStatus,
   feedCount = 0,
   hidden = false,
 }: TabBarProps) {
   const t = useTranslations("Tabs");
+  const tCommon = useTranslations("Common");
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -58,23 +70,42 @@ export function TabBar({
       ? t("sendingReport")
       : t("reportNoise");
 
-  const toneClass =
-    statusTone === "success"
-      ? "text-[var(--bruit-success)]"
-      : statusTone === "error"
-        ? "text-[var(--bruit-danger)]"
-        : "text-[var(--bruit-muted)]";
-
   if (hidden) {
     return null;
   }
 
+  const StatusIcon =
+    statusTone === "success"
+      ? Check
+      : statusTone === "error"
+        ? CircleAlert
+        : null;
+
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-50 flex flex-col items-center px-3.5 pb-[max(0.7rem,env(safe-area-inset-bottom))]">
       {statusMessage ? (
-        <div className="pointer-events-auto mb-2 w-full max-w-sm">
-          <div className="bruit-chrome rounded-2xl px-4 py-2.5 text-center text-[0.88rem] font-medium animate-[bruit-rise_240ms_ease-out]">
-            <p className={toneClass}>{statusMessage}</p>
+        <div className="pointer-events-auto mb-2.5 w-full max-w-sm">
+          <div
+            role="status"
+            aria-live="polite"
+            className={`bruit-toast bruit-toast--${statusTone}`}
+          >
+            {StatusIcon ? (
+              <span className="bruit-toast-icon" aria-hidden>
+                <StatusIcon size={15} strokeWidth={2.4} />
+              </span>
+            ) : null}
+            <p className="bruit-toast-message">{statusMessage}</p>
+            {onDismissStatus ? (
+              <button
+                type="button"
+                onClick={onDismissStatus}
+                className="bruit-toast-dismiss cursor-pointer"
+                aria-label={tCommon("dismiss")}
+              >
+                <X size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

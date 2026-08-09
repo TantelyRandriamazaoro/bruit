@@ -99,7 +99,13 @@
     "lookingUpArea": "Finding location…",
     "reportsCount": "{count, plural, one {# report} other {# reports}}",
     "showOnMap": "Show this area on the map",
-    "showOnMapShort": "Show on map"
+    "showOnMapShort": "Show on map",
+    "myReports": "My reports",
+    "myReportsEmpty": "Reports from this device will appear here.",
+    "nearby": "Nearby",
+    "deleteReport": "Delete report",
+    "deleteConfirm": "Delete this report? It will be removed from the map and activity feed.",
+    "deleting": "Deleting…"
   },
   "Insights": {
     "title": "Trends",
@@ -228,6 +234,17 @@
     "bulletLiveMap": "The map shows active areas for about six hours",
     "bulletLingering": "New nearby reports keep an area active"
   },
+  "Welcome": {
+    "title": "Report nearby noise",
+    "subtitle": "Share noise nuisance around you and see where it is happening.",
+    "featureReportTitle": "Share What You Hear",
+    "featureReportBody": "Log nearby noise with Report. You can send one report every 30 minutes.",
+    "featureAuthoritiesTitle": "Call Authorities",
+    "featureAuthoritiesBody": "Find nearby police stations in Help and call when you need support.",
+    "featureAnonymousTitle": "Stay Anonymous",
+    "featureAnonymousBody": "Reports use a private device ID, never your name.",
+    "continue": "Continue"
+  },
   "Map": {
     "loading": "Loading map…",
     "failed": "Map failed to load.",
@@ -258,8 +275,10 @@
     "allowLocation": "Allow location access to report noise.",
     "rateLimited": "You can report again in {minutes} min.",
     "submitFailed": "Could not submit that report. Try again.",
-    "reported": "Report sent. Thank you.",
-    "networkError": "A network error occurred while sending your report. Try again."
+    "reported": "Report sent",
+    "networkError": "A network error occurred while sending your report. Try again.",
+    "deleted": "Report deleted.",
+    "deleteFailed": "Could not delete that report. Try again."
   },
   "Time": {
     "justNow": "Just now",
