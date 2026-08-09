@@ -18,6 +18,14 @@ export function setLastReportAt(timestampMs: number): void {
   window.localStorage.setItem(LAST_REPORT_AT_KEY, String(timestampMs));
 }
 
+export function clearLastReportAt(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LAST_REPORT_AT_KEY);
+}
+
 export function getCooldownRemainingMs(now = Date.now()): number {
   const last = getLastReportAt();
   if (last === null) {

@@ -39,6 +39,38 @@ export type CreateNoiseReportResult =
   | CreateNoiseReportSuccess
   | CreateNoiseReportFailure;
 
+export type ListMyNoiseReportsSuccess = {
+  ok: true;
+  reports: NoiseReport[];
+};
+
+export type ListMyNoiseReportsFailure = {
+  ok: false;
+  error: "invalid_device_id" | string;
+};
+
+export type ListMyNoiseReportsResult =
+  | ListMyNoiseReportsSuccess
+  | ListMyNoiseReportsFailure;
+
+export type DeleteNoiseReportSuccess = {
+  ok: true;
+  id: string;
+};
+
+export type DeleteNoiseReportFailure = {
+  ok: false;
+  error:
+    | "invalid_device_id"
+    | "invalid_report_id"
+    | "not_found"
+    | string;
+};
+
+export type DeleteNoiseReportResult =
+  | DeleteNoiseReportSuccess
+  | DeleteNoiseReportFailure;
+
 export type Database = {
   public: {
     Tables: {
@@ -103,6 +135,19 @@ export type Database = {
           p_intensity?: string;
         };
         Returns: CreateNoiseReportResult;
+      };
+      list_my_noise_reports: {
+        Args: {
+          p_device_id: string;
+        };
+        Returns: ListMyNoiseReportsResult;
+      };
+      delete_noise_report: {
+        Args: {
+          p_device_id: string;
+          p_report_id: string;
+        };
+        Returns: DeleteNoiseReportResult;
       };
     };
     Views: Record<string, never>;

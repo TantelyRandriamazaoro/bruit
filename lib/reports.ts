@@ -3,6 +3,8 @@ import type { NoiseCategory, NoiseIntensity } from "@/lib/noise-meta";
 import { getSupabase } from "@/lib/supabase/client";
 import type {
   CreateNoiseReportResult,
+  DeleteNoiseReportResult,
+  ListMyNoiseReportsResult,
   NoiseReport,
 } from "@/lib/supabase/types";
 
@@ -68,4 +70,39 @@ export async function createNoiseReport(params: {
   }
 
   return data as CreateNoiseReportResult;
+}
+
+export async function fetchMyReports(
+  deviceId: string,
+): Promise<NoiseReport[]> {
+  const { data, error } = await getSupabase().rpc("list_my_noise_reports", {
+    p_device_id: deviceId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const result = data as ListMyNoiseReportsResult;
+  if (!result?.ok) {
+    throw new Error(result?.error ?? "list_my_noise_reports_failed");
+  }
+
+  return result.reports ?? [];
+}
+
+export async function deleteNoiseReport(params: {
+  deviceId: string;
+  reportId: string;
+}): Promise<DeleteNoiseReportResult> {
+  const { data, error } = await getSupabase().rpc("delete_noise_report", {
+    p_device_id: params.deviceId,
+    p_report_id: params.reportId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as DeleteNoiseReportResult;
 }
