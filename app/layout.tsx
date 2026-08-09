@@ -23,7 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
-      <body className="min-h-full font-sans">
+      <body className="h-full font-sans">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

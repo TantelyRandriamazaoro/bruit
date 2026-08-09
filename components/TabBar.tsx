@@ -23,7 +23,7 @@ type TabBarProps = {
 
 function FlagIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M6 3.75v16.5"
         stroke="currentColor"
@@ -66,7 +66,6 @@ export function TabBar({
 
   const onCooldown = remaining > 0;
   const progress = onCooldown ? 1 - remaining / COOLDOWN_MS : 0;
-  const circumference = 2 * Math.PI * 22;
   const reportLabel = onCooldown
     ? `Report available in ${formatCountdown(remaining)}`
     : busy
@@ -94,9 +93,48 @@ export function TabBar({
         </div>
       ) : null}
 
+      <div className="mb-2.5 flex w-full max-w-lg justify-start">
+        <button
+          type="button"
+          onClick={onReport}
+          disabled={busy || onCooldown}
+          aria-label={reportLabel}
+          title={reportLabel}
+          aria-busy={busy || undefined}
+          className={`bruit-report-fab pointer-events-auto cursor-pointer disabled:cursor-not-allowed ${
+            onCooldown ? "bruit-report-fab-cooldown" : ""
+          }`}
+        >
+          {onCooldown ? (
+            <span
+              className="bruit-report-fab-progress"
+              style={{ transform: `scaleX(${progress})` }}
+              aria-hidden
+            />
+          ) : null}
+          <span className="relative z-10 flex items-center gap-2">
+            {onCooldown ? (
+              <span className="bruit-report-fab-timer tabular-nums">
+                {formatCountdown(remaining)}
+              </span>
+            ) : busy ? (
+              <>
+                <span className="bruit-report-fab-spinner" aria-hidden />
+                <span>Sending…</span>
+              </>
+            ) : (
+              <>
+                <FlagIcon />
+                <span>Report</span>
+              </>
+            )}
+          </span>
+        </button>
+      </div>
+
       <nav
         aria-label="Primary"
-        className="bruit-tabbar pointer-events-auto grid w-full max-w-lg grid-cols-5 items-end px-1 pb-1.5 pt-1.5"
+        className="bruit-tabbar pointer-events-auto grid w-full max-w-lg grid-cols-4 items-end px-1 pb-1.5 pt-1.5"
       >
         <button
           type="button"
@@ -148,60 +186,6 @@ export function TabBar({
           </span>
           <span>Activity</span>
         </button>
-
-        <div className="flex flex-col items-center justify-end pb-0.5">
-          <button
-            type="button"
-            onClick={onReport}
-            disabled={busy || onCooldown}
-            aria-label={reportLabel}
-            title={reportLabel}
-            aria-busy={busy || undefined}
-            className={`bruit-tab-report cursor-pointer disabled:cursor-not-allowed ${
-              onCooldown ? "bruit-tab-report-cooldown" : ""
-            }`}
-          >
-            <svg
-              className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
-              viewBox="0 0 56 56"
-              aria-hidden
-            >
-              <circle
-                cx="28"
-                cy="28"
-                r="22"
-                fill="none"
-                className="bruit-tab-report-ring-track"
-                strokeWidth="2.5"
-              />
-              {onCooldown ? (
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="22"
-                  fill="none"
-                  className="bruit-tab-report-ring-progress"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={circumference * (1 - progress)}
-                />
-              ) : null}
-            </svg>
-            <span className="relative z-10 flex items-center justify-center">
-              {onCooldown ? (
-                <span className="bruit-tab-report-timer tabular-nums">
-                  {formatCountdown(remaining)}
-                </span>
-              ) : busy ? (
-                <span className="bruit-tab-report-spinner" aria-hidden />
-              ) : (
-                <FlagIcon />
-              )}
-            </span>
-          </button>
-          <span className="bruit-tab-report-label">Report</span>
-        </div>
 
         <button
           type="button"

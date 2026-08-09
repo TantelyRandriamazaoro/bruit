@@ -329,7 +329,7 @@ export function MapView({
     <>
       <div
         ref={containerRef}
-        className="bruit-map absolute inset-0 h-full w-full"
+        className="bruit-map absolute inset-0"
         aria-label="Noise pollution map"
       />
       {mapError ? (

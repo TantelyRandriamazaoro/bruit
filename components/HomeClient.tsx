@@ -295,7 +295,7 @@ export function HomeClient() {
   return (
     <div
       ref={setShellEl}
-      className="relative h-dvh w-full overflow-hidden bg-[var(--bruit-map-wash)]"
+      className="bruit-shell bg-[var(--bruit-map-wash)]"
     >
       <div
         className={
@@ -334,7 +334,7 @@ export function HomeClient() {
 
       {activeTab !== "map" && !aboutOpen ? (
         <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
-          <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[0.95rem]">
+          <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
             <ThemeToggle />
           </div>
         </div>
@@ -366,7 +366,7 @@ export function HomeClient() {
       ) : null}
 
       {locationError && !status && showMapChrome && !drawerOpen ? (
-        <div className="pointer-events-none absolute inset-x-4 bottom-36 z-20 mx-auto max-w-sm">
+        <div className="pointer-events-none absolute inset-x-4 z-20 mx-auto max-w-sm bottom-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+0.75rem)]">
           <div className="bruit-chrome rounded-2xl px-4 py-2.5 text-center text-sm text-[var(--bruit-muted)]">
             {locationError}
           </div>
