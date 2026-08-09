@@ -12,7 +12,7 @@ import {
 type ReportDrawerProps = {
   open: boolean;
   busy?: boolean;
-  /** Keep drawer inside the app shell so the tab bar stays above the sheet. */
+  /** Keep drawer inside the app shell (covers the tab bar). */
   container?: HTMLElement | null;
   onClose: () => void;
   onSubmit: (details: {
@@ -159,11 +159,11 @@ export function ReportDrawer({
       autoFocus
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="bruit-drawer-overlay fixed inset-x-0 top-0 z-40 bottom-[var(--bruit-tabbar-space)]" />
+        <Drawer.Overlay className="bruit-drawer-overlay fixed inset-0 z-[60]" />
         <Drawer.Content
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
-          className="bruit-sheet bruit-drawer-content fixed inset-x-0 z-40 mx-auto flex h-[calc(100dvh-var(--bruit-tabbar-space))] max-h-[calc(100dvh-var(--bruit-tabbar-space))] w-full max-w-lg flex-col outline-none bottom-[var(--bruit-tabbar-space)] focus:outline-none"
+          className="bruit-sheet bruit-drawer-content fixed inset-x-0 bottom-0 z-[60] mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-lg flex-col outline-none focus:outline-none"
         >
           <Drawer.Handle className="bruit-drawer-handle mx-auto mt-2.5 mb-1" />
 
@@ -282,7 +282,7 @@ export function ReportDrawer({
             </div>
           </div>
 
-          <div className="border-t border-[var(--bruit-hairline)] px-5 pb-4 pt-3">
+          <div className="border-t border-[var(--bruit-hairline)] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
             <button
               type="button"
               disabled={busy}
