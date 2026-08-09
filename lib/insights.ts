@@ -121,27 +121,18 @@ export type MunicipalInsights = {
   } | null;
 };
 
-const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_KEYS = ["0", "1", "2", "3", "4", "5", "6"] as const;
 
 export const TIME_SLOTS: TimeSlotMeta[] = [
-  { id: 0, label: "12–3 AM", shortLabel: "Night", startHour: 0 },
-  { id: 1, label: "3–6 AM", shortLabel: "Early", startHour: 3 },
-  { id: 2, label: "6–9 AM", shortLabel: "Morning", startHour: 6 },
-  { id: 3, label: "9–12 PM", shortLabel: "Midday", startHour: 9 },
-  { id: 4, label: "12–3 PM", shortLabel: "Afternoon", startHour: 12 },
-  { id: 5, label: "3–6 PM", shortLabel: "Late day", startHour: 15 },
-  { id: 6, label: "6–9 PM", shortLabel: "Evening", startHour: 18 },
-  { id: 7, label: "9–12 AM", shortLabel: "Night", startHour: 21 },
+  { id: 0, label: "0", shortLabel: "0", startHour: 0 },
+  { id: 1, label: "1", shortLabel: "1", startHour: 3 },
+  { id: 2, label: "2", shortLabel: "2", startHour: 6 },
+  { id: 3, label: "3", shortLabel: "3", startHour: 9 },
+  { id: 4, label: "4", shortLabel: "4", startHour: 12 },
+  { id: 5, label: "5", shortLabel: "5", startHour: 15 },
+  { id: 6, label: "6", shortLabel: "6", startHour: 18 },
+  { id: 7, label: "7", shortLabel: "7", startHour: 21 },
 ];
-
-const STATUS_LABEL: Record<HotspotStatus, string> = {
-  new: "New",
-  escalating: "Escalating",
-  cooling: "Cooling",
-  recurring: "Recurring",
-  persistent: "Persistent",
-  active: "Active",
-};
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -154,14 +145,14 @@ function localDayKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function weekdayShort(date: Date): string {
-  return date.toLocaleDateString(undefined, { weekday: "short" });
+function weekdayShort(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale, { weekday: "short" });
 }
 
-function formatHourLabel(hour: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12} ${period}`;
+function formatHourLabel(hour: number, locale: string): string {
+  const date = new Date();
+  date.setHours(hour, 0, 0, 0);
+  return date.toLocaleTimeString(locale, { hour: "numeric" });
 }
 
 function mondayIndex(date: Date): number {
@@ -170,10 +161,6 @@ function mondayIndex(date: Date): number {
 
 function slotForHour(hour: number): number {
   return Math.min(7, Math.floor(hour / 3));
-}
-
-function areaLabel(lat: number, lng: number): string {
-  return `Near ${lat.toFixed(3)}°, ${lng.toFixed(3)}°`;
 }
 
 function categoryBreakdown(reports: NoiseReport[]): HotspotCategoryShare[] {
@@ -195,16 +182,16 @@ function categoryBreakdown(reports: NoiseReport[]): HotspotCategoryShare[] {
     const count = counts.get(category.id) ?? 0;
     return {
       id: category.id,
-      label: category.label,
+      label: category.id,
       count,
       share: total > 0 ? count / total : 0,
     };
   })
     .filter((item) => item.count > 0)
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
 }
 
-function peakHourFor(reports: NoiseReport[]): string | null {
+function peakHourFor(reports: NoiseReport[], locale: string): string | null {
   if (reports.length === 0) {
     return null;
   }
@@ -226,7 +213,7 @@ function peakHourFor(reports: NoiseReport[]): string | null {
       bestValue = value;
     }
   }
-  return bestHour >= 0 ? formatHourLabel(bestHour) : null;
+  return bestHour >= 0 ? formatHourLabel(bestHour, locale) : null;
 }
 
 function classifyStatus(input: {
@@ -267,6 +254,7 @@ function buildHotspot(
   cluster: ReturnType<typeof clusterNearbyReports>[number],
   currentStart: number,
   previousStart: number,
+  locale: string,
 ): NoiseHotspot | null {
   const reportsCurrent = cluster.reports.filter((report) => {
     const t = new Date(report.created_at).getTime();
@@ -338,7 +326,7 @@ function buildHotspot(
     lat: cluster.lat,
     lng: cluster.lng,
     cellKey: cluster.cellKey,
-    label: areaLabel(cluster.lat, cluster.lng),
+    label: "",
     reports: cluster.reports,
     reportsCurrent,
     currentCount,
@@ -353,11 +341,16 @@ function buildHotspot(
     categories,
     peakHourLabel: peakHourFor(
       reportsCurrent.length > 0 ? reportsCurrent : cluster.reports,
+      locale,
     ),
   };
 }
 
-function buildTimeMatrix(reports: NoiseReport[]): {
+function buildTimeMatrix(
+  reports: NoiseReport[],
+  weekdayLabels: string[],
+  slotLabels: string[],
+): {
   cells: TimeMatrixCell[];
   max: number;
   peak: MunicipalInsights["peakWindow"];
@@ -389,7 +382,7 @@ function buildTimeMatrix(reports: NoiseReport[]): {
         weekday,
         slot,
         value,
-        label: `${WEEKDAY_LABELS[weekday]} ${TIME_SLOTS[slot].label}`,
+        label: `${weekdayLabels[weekday]} ${slotLabels[slot]}`,
       });
       if (value > peakValue) {
         peakValue = value;
@@ -401,8 +394,8 @@ function buildTimeMatrix(reports: NoiseReport[]): {
   const peak =
     peakValue > 0 && peakKey
       ? {
-          weekdayLabel: WEEKDAY_LABELS[Number(peakKey.split(":")[0])],
-          slotLabel: TIME_SLOTS[Number(peakKey.split(":")[1])].label,
+          weekdayLabel: weekdayLabels[Number(peakKey.split(":")[0])],
+          slotLabel: slotLabels[Number(peakKey.split(":")[1])],
           value: peakValue,
         }
       : null;
@@ -413,6 +406,8 @@ function buildTimeMatrix(reports: NoiseReport[]): {
 function buildDayBars(
   reports: NoiseReport[],
   now = Date.now(),
+  locale = "en",
+  todayLabel = "Today",
 ): DayBarInsight[] {
   const todayStart = startOfLocalDay(new Date(now));
   const todayKey = localDayKey(todayStart);
@@ -441,7 +436,7 @@ function buildDayBars(
     const isToday = key === todayKey;
     return {
       key,
-      label: isToday ? "Today" : weekdayShort(date),
+      label: isToday ? todayLabel : weekdayShort(date, locale),
       count,
       isToday,
     };
@@ -465,7 +460,7 @@ function intensityBreakdown(reports: NoiseReport[]): IntensityShare[] {
     const count = counts.get(intensity.id) ?? 0;
     return {
       id: intensity.id,
-      label: intensity.label,
+      label: intensity.id,
       count,
       share: total > 0 ? count / total : 0,
     };
@@ -481,9 +476,17 @@ export type ScopedReportInsights = {
   topCategory: HotspotCategoryShare | null;
 };
 
+export type InsightLabelMessages = {
+  today: string;
+  weekday: (index: number) => string;
+  timeSlot: (id: number) => string;
+  trend: (status: HotspotStatus) => string;
+};
+
 /** Analytics for an arbitrary report slice (day, half-hour, etc.). */
 export function buildScopedReportInsights(
   reports: NoiseReport[],
+  locale = "en",
 ): ScopedReportInsights {
   const categories = categoryBreakdown(reports);
   const intensities = intensityBreakdown(reports);
@@ -497,7 +500,7 @@ export function buildScopedReportInsights(
     categories,
     intensities,
     loudShare: total > 0 ? loudCount / total : 0,
-    peakHourLabel: peakHourFor(reports),
+    peakHourLabel: peakHourFor(reports, locale),
     topCategory: categories[0] ?? null,
   };
 }
@@ -506,6 +509,8 @@ export function buildScopedReportInsights(
 export function buildHotspotDetail(
   hotspot: NoiseHotspot,
   now = Date.now(),
+  locale = "en",
+  labels?: Pick<InsightLabelMessages, "today" | "weekday" | "timeSlot">,
 ): HotspotDetailInsights {
   const currentStart = now - HEATMAP_DAYS * 24 * 60 * 60 * 1000;
   const scoped =
@@ -516,7 +521,17 @@ export function buildHotspotDetail(
           return Number.isFinite(t) && t >= currentStart;
         });
 
-  const matrix = buildTimeMatrix(scoped.length > 0 ? scoped : hotspot.reports);
+  const weekdayLabels = WEEKDAY_KEYS.map((key) =>
+    labels ? labels.weekday(Number(key)) : key,
+  );
+  const slotLabels = TIME_SLOTS.map((slot) =>
+    labels ? labels.timeSlot(slot.id) : String(slot.id),
+  );
+  const matrix = buildTimeMatrix(
+    scoped.length > 0 ? scoped : hotspot.reports,
+    weekdayLabels,
+    slotLabels,
+  );
   const intensities = intensityBreakdown(
     scoped.length > 0 ? scoped : hotspot.reports,
   );
@@ -527,54 +542,30 @@ export function buildHotspotDetail(
 
   return {
     windowDays: HEATMAP_DAYS,
-    timeSlots: TIME_SLOTS,
-    weekdayLabels: WEEKDAY_LABELS,
+    timeSlots: TIME_SLOTS.map((slot, index) => ({
+      ...slot,
+      label: slotLabels[index],
+      shortLabel: slotLabels[index],
+    })),
+    weekdayLabels,
     timeMatrix: matrix.cells,
     timeMatrixMax: matrix.max,
     peakWindow: matrix.peak,
-    days: buildDayBars(scoped, now),
+    days: buildDayBars(scoped, now, locale, labels?.today ?? "Today"),
     intensities,
     loudShare: total > 0 ? loudCount / total : 0,
   };
-}
-
-export function hotspotStatusLabel(status: HotspotStatus): string {
-  return STATUS_LABEL[status];
-}
-
-export function formatGrowth(growthRate: number | null): string | null {
-  if (growthRate === null) {
-    return "No prior week";
-  }
-  if (growthRate === 0) {
-    return "Same as prior week";
-  }
-  const pct = Math.round(Math.abs(growthRate) * 100);
-  return growthRate > 0
-    ? `Up ${pct}% vs prior week`
-    : `Down ${pct}% vs prior week`;
 }
 
 export function formatPercent(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
-export function formatWeekDelta(delta: number | null): string | null {
-  if (delta === null) {
-    return null;
-  }
-  if (delta === 0) {
-    return "Same as prior week";
-  }
-  if (delta > 0) {
-    return `Up ${delta} vs prior week`;
-  }
-  return `Down ${Math.abs(delta)} vs prior week`;
-}
-
 export function buildMunicipalInsights(
   reports: NoiseReport[],
   now = Date.now(),
+  locale = "en",
+  labels?: InsightLabelMessages,
 ): MunicipalInsights {
   const currentStart = now - HEATMAP_DAYS * 24 * 60 * 60 * 1000;
   const previousStart = now - INSIGHTS_DAYS * 24 * 60 * 60 * 1000;
@@ -590,7 +581,9 @@ export function buildMunicipalInsights(
 
   const clusters = clusterNearbyReports(reports);
   const hotspots = clusters
-    .map((cluster) => buildHotspot(cluster, currentStart, previousStart))
+    .map((cluster) =>
+      buildHotspot(cluster, currentStart, previousStart, locale),
+    )
     .filter((item): item is NoiseHotspot => item !== null)
     .filter((item) => item.currentCount > 0 || item.status === "cooling")
     .sort((a, b) => b.priority - a.priority);
@@ -603,23 +596,28 @@ export function buildMunicipalInsights(
       item.distinctDays >= 3,
   );
 
-  const trends: TrendBucket[] = (
-    [
-      ["new", "New this week"],
-      ["escalating", "Escalating"],
-      ["cooling", "Cooling off"],
-      ["recurring", "Recurring"],
-      ["persistent", "Persistent"],
-    ] as const
-  )
-    .map(([status, label]) => ({
+  const trendStatuses = [
+    "new",
+    "escalating",
+    "cooling",
+    "recurring",
+    "persistent",
+  ] as const;
+  const trends: TrendBucket[] = trendStatuses
+    .map((status) => ({
       status,
-      label,
+      label: labels ? labels.trend(status) : status,
       hotspots: hotspots.filter((item) => item.status === status).slice(0, 6),
     }))
     .filter((bucket) => bucket.hotspots.length > 0);
 
-  const matrix = buildTimeMatrix(currentReports);
+  const weekdayLabels = WEEKDAY_KEYS.map((key) =>
+    labels ? labels.weekday(Number(key)) : key,
+  );
+  const slotLabels = TIME_SLOTS.map((slot) =>
+    labels ? labels.timeSlot(slot.id) : String(slot.id),
+  );
+  const matrix = buildTimeMatrix(currentReports, weekdayLabels, slotLabels);
   const deltaVsPreviousWeek =
     currentReports.length === 0 && previousReports.length === 0
       ? null
@@ -640,8 +638,12 @@ export function buildMunicipalInsights(
     hotspots,
     recurring,
     trends,
-    timeSlots: TIME_SLOTS,
-    weekdayLabels: WEEKDAY_LABELS,
+    timeSlots: TIME_SLOTS.map((slot, index) => ({
+      ...slot,
+      label: slotLabels[index],
+      shortLabel: slotLabels[index],
+    })),
+    weekdayLabels,
     timeMatrix: matrix.cells,
     timeMatrixMax: matrix.max,
     peakWindow: matrix.peak,

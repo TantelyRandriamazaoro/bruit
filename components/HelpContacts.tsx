@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronRight, Phone, Search, Siren } from "lucide-react";
+import { ChevronRight, Phone, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   formatPolicePhone,
   nearbyPoliceStations,
@@ -24,17 +25,6 @@ function formatDistance(km: number): string {
     return `${km.toFixed(1)} km`;
   }
   return `${Math.round(km)} km`;
-}
-
-function PoliceMark() {
-  return (
-    <span
-      className="bruit-place-badge flex h-[29px] w-[29px] shrink-0 items-center justify-center rounded-[7px] text-white"
-      aria-hidden
-    >
-      <Siren size={15} strokeWidth={2.35} />
-    </span>
-  );
 }
 
 function TrailingButton({
@@ -71,13 +61,17 @@ function StationRow({
   station,
   distanceKm,
   showSeparator,
+  phoneQuery,
 }: {
   station: Pick<PoliceStation, "id" | "name" | "phone">;
   distanceKm: number;
   showSeparator: boolean;
+  phoneQuery: string;
 }) {
+  const t = useTranslations("Help");
+  const tCommon = useTranslations("Common");
   const label = shortPoliceStationName(station.name);
-  const searchHref = policeGoogleSearchHref(station.name);
+  const searchHref = policeGoogleSearchHref(station.name, phoneQuery);
   const phone = station.phone;
   const number = phone ? formatPolicePhone(phone) : null;
   const distance = formatDistance(distanceKm);
@@ -90,20 +84,22 @@ function StationRow({
           href={searchHref}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Search Google for ${station.name} phone number, ${distance} away`}
+          aria-label={t("searchGoogleAria", {
+            name: station.name,
+            distance,
+          })}
           className="bruit-feed-row flex w-full min-h-11 cursor-pointer items-center text-left no-underline transition-colors duration-150 focus-visible:bg-[rgba(0,122,255,0.06)] focus-visible:outline-none"
         >
-          <PoliceMark />
           <span className="min-w-0 flex-1 py-0.5">
             <span className="block truncate text-[1.05rem] font-normal tracking-[-0.01em] text-[var(--bruit-ink)]">
               {label}
             </span>
             <span className="mt-0.5 block truncate text-[0.82rem] font-normal text-[var(--bruit-muted)]">
-              {distance} away
+              {t("away", { distance })}
             </span>
           </span>
           <span className="shrink-0 text-[0.95rem] font-normal text-[var(--bruit-accent)]">
-            Search
+            {tCommon("search")}
           </span>
           <span className="ml-0.5 text-[var(--bruit-muted)] opacity-55" aria-hidden>
             <ChevronRight size={18} strokeWidth={2.2} />
@@ -117,20 +113,19 @@ function StationRow({
     <li>
       {showSeparator ? <div className="bruit-list-separator" /> : null}
       <div className="bruit-feed-row flex w-full min-h-11 items-center">
-        <PoliceMark />
         <span className="min-w-0 flex-1 py-0.5">
           <span className="block truncate text-[1.05rem] font-normal tracking-[-0.01em] text-[var(--bruit-ink)]">
             {label}
           </span>
           <span className="mt-0.5 block truncate text-[0.82rem] font-normal text-[var(--bruit-muted)]">
-            {distance} away
+            {t("away", { distance })}
             <span className="text-[var(--bruit-hairline-strong)]"> · </span>
             <span className="tabular-nums">{number}</span>
           </span>
         </span>
         <TrailingButton
           href={searchHref}
-          label={`Search Google for ${station.name}`}
+          label={t("searchGoogleName", { name: station.name })}
           tone="search"
           external
         >
@@ -138,7 +133,7 @@ function StationRow({
         </TrailingButton>
         <TrailingButton
           href={policePhoneHref(phone)}
-          label={`Call ${station.name}, ${number}`}
+          label={t("callAria", { name: station.name, number: number ?? "" })}
           tone="call"
         >
           <Phone size={18} strokeWidth={2.15} />
@@ -162,11 +157,14 @@ export function HelpContacts({
   hidden = false,
   userLocation,
 }: HelpContactsProps) {
+  const t = useTranslations("Help");
+
   if (hidden) {
     return null;
   }
 
   const nearby = userLocation ? nearbyPoliceStations(userLocation) : [];
+  const phoneQuery = t("phoneQuery");
 
   return (
     <section
@@ -178,29 +176,22 @@ export function HelpContacts({
           id="help-title"
           className="bruit-brand text-[2.15rem] font-bold tracking-tight text-[var(--bruit-ink)]"
         >
-          Help
+          {t("title")}
         </h1>
         <p className="mt-1 max-w-sm text-[0.94rem] font-normal leading-snug text-[var(--bruit-muted)]">
-          {userLocation
-            ? "Call a nearby commissariat, or look up a number on Google."
-            : "Enable location to see commissariats near you."}
+          {userLocation ? t("subtitleLocated") : t("subtitleNoLocation")}
         </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
         <p className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.04em] text-[var(--bruit-muted)]">
-          Nearby
+          {t("nearby")}
         </p>
 
         {!userLocation ? (
-          <EmptyGroup>
-            Location is off. Turn it on to list commissariats near you.
-          </EmptyGroup>
+          <EmptyGroup>{t("locationOff")}</EmptyGroup>
         ) : nearby.length === 0 ? (
-          <EmptyGroup>
-            No commissariats within about 40 km. Search Google for a local
-            station.
-          </EmptyGroup>
+          <EmptyGroup>{t("noneNearby")}</EmptyGroup>
         ) : (
           <div className="bruit-grouped-list mx-auto max-w-lg overflow-hidden">
             <ul>
@@ -210,6 +201,7 @@ export function HelpContacts({
                   station={station}
                   distanceKm={station.distanceKm}
                   showSeparator={index > 0}
+                  phoneQuery={phoneQuery}
                 />
               ))}
             </ul>
@@ -217,8 +209,7 @@ export function HelpContacts({
         )}
 
         <p className="mx-auto mt-5 max-w-lg px-3 text-[0.78rem] font-normal leading-relaxed text-[var(--bruit-muted)]">
-          Bruit reports are community signals — not a substitute for official
-          help.
+          {t("disclaimer")}
         </p>
       </div>
     </section>

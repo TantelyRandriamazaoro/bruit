@@ -1,11 +1,13 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
 import {
   buildHistoryTimeline,
   formatHistoryRange,
   type HistorySlot,
 } from "@/lib/history-timeline";
+import { scrollChildIntoContainer } from "@/lib/scroll-into-container";
 import type { NoiseReport } from "@/lib/supabase/types";
 
 type HistoryScrubberProps = {
@@ -23,8 +25,22 @@ export function HistoryScrubber({
   onDayChange,
   onSlotChange,
 }: HistoryScrubberProps) {
-  const timeline = useMemo(() => buildHistoryTimeline(reports), [reports]);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const t = useTranslations("History");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const dayLabels = useMemo(
+    () => ({
+      today: tCommon("today"),
+      yesterday: tCommon("yesterday"),
+    }),
+    [tCommon],
+  );
+  const timeline = useMemo(
+    () => buildHistoryTimeline(reports, undefined, undefined, locale, dayLabels),
+    [reports, locale, dayLabels],
+  );
+  const daysScrollerRef = useRef<HTMLDivElement | null>(null);
+  const slotsScrollerRef = useRef<HTMLDivElement | null>(null);
 
   const activeDayKey = dayKey ?? timeline.defaultDayKey;
   const activeDay =
@@ -42,20 +58,43 @@ export function HistoryScrubber({
     : -1;
 
   useEffect(() => {
-    if (!activeSlot || !scrollerRef.current) {
+    const container = daysScrollerRef.current;
+    if (!container || !activeDayKey) {
       return;
     }
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    const node = scrollerRef.current.querySelector<HTMLElement>(
+    const node = container.querySelector<HTMLElement>(
+      `[data-day-key="${activeDayKey}"]`,
+    );
+    if (node) {
+      scrollChildIntoContainer(
+        container,
+        node,
+        reduceMotion ? "auto" : "smooth",
+      );
+    }
+  }, [activeDayKey]);
+
+  useEffect(() => {
+    const container = slotsScrollerRef.current;
+    if (!container || !activeSlot) {
+      return;
+    }
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const node = container.querySelector<HTMLElement>(
       `[data-slot-id="${activeSlot.id}"]`,
     );
-    node?.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    if (node) {
+      scrollChildIntoContainer(
+        container,
+        node,
+        reduceMotion ? "auto" : "smooth",
+      );
+    }
   }, [activeSlot]);
 
   if (timeline.days.length === 0 || slots.length === 0) {
@@ -69,9 +108,10 @@ export function HistoryScrubber({
   return (
     <div className="bruit-grouped-list overflow-hidden">
       <div
+        ref={daysScrollerRef}
         className="bruit-history-days"
         role="tablist"
-        aria-label="Choose a day"
+        aria-label={t("chooseDay")}
       >
         {timeline.days.map((day) => {
           const selected = day.key === activeDayKey;
@@ -80,6 +120,7 @@ export function HistoryScrubber({
               key={day.key}
               type="button"
               role="tab"
+              data-day-key={day.key}
               aria-selected={selected}
               onClick={() => {
                 onDayChange(day.key);
@@ -108,7 +149,9 @@ export function HistoryScrubber({
               />
               <span className="sr-only">
                 {day.label}
-                {day.count > 0 ? `, ${day.count} reports` : ", quiet"}
+                {day.count > 0
+                  ? t("dayReports", { count: day.count })
+                  : t("dayQuiet")}
               </span>
             </button>
           );
@@ -118,8 +161,8 @@ export function HistoryScrubber({
       <div className="px-4 pb-1">
         <p className="text-[1.05rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
           {activeSlot
-            ? formatHistoryRange(activeSlot.startMs, activeSlot.endMs)
-            : activeDay?.label ?? "Pick a time"}
+            ? formatHistoryRange(activeSlot.startMs, activeSlot.endMs, locale)
+            : (activeDay?.label ?? t("pickTime"))}
         </p>
         <p
           className="mt-0.5 text-[0.84rem] font-medium text-[var(--bruit-muted)]"
@@ -127,25 +170,25 @@ export function HistoryScrubber({
         >
           {activeSlot
             ? activeSlot.count === 0
-              ? "Quiet in this half-hour"
-              : `${activeSlot.count} report${activeSlot.count === 1 ? "" : "s"} in this half-hour`
+              ? t("quietHalfHour")
+              : t("reportsHalfHour", { count: activeSlot.count })
             : null}
           {activeDay ? (
             <>
               <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                 ·
               </span>
-              {activeDay.count} that day
+              {t("thatDay", { count: activeDay.count })}
             </>
           ) : null}
         </p>
       </div>
 
       <div
-        ref={scrollerRef}
+        ref={slotsScrollerRef}
         className="bruit-history-slots"
         role="listbox"
-        aria-label="Half-hour history"
+        aria-label={t("halfHourHistory")}
       >
         {slots.map((slot) => {
           const selected = slot.id === activeSlot?.id;
@@ -162,8 +205,8 @@ export function HistoryScrubber({
               aria-selected={selected}
               aria-label={`${slot.label}, ${
                 slot.count === 0
-                  ? "quiet"
-                  : `${slot.count} report${slot.count === 1 ? "" : "s"}`
+                  ? t("slotQuiet")
+                  : t("slotReports", { count: slot.count })
               }`}
               onClick={() => selectSlot(slot)}
               className={`bruit-history-slot cursor-pointer ${
@@ -187,7 +230,7 @@ export function HistoryScrubber({
       {selectedIndex >= 0 ? (
         <div className="px-4 pb-3 pt-0.5">
           <label className="sr-only" htmlFor="bruit-history-scrub">
-            Scrub history in 30-minute steps
+            {t("scrubLabel")}
           </label>
           <input
             id="bruit-history-scrub"
@@ -205,9 +248,14 @@ export function HistoryScrubber({
             className="bruit-history-range cursor-pointer"
             aria-valuetext={
               activeSlot
-                ? `${formatHistoryRange(activeSlot.startMs, activeSlot.endMs)}, ${
-                    activeSlot.count
-                  } reports`
+                ? t("rangeReports", {
+                    range: formatHistoryRange(
+                      activeSlot.startMs,
+                      activeSlot.endMs,
+                      locale,
+                    ),
+                    count: activeSlot.count,
+                  })
                 : undefined
             }
           />

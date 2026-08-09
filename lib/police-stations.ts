@@ -122,8 +122,11 @@ export function policePhoneHref(phone: string): string {
 }
 
 /** Google search for a commissariat phone number. */
-export function policeGoogleSearchHref(name: string): string {
-  const query = `${name} Madagascar téléphone`;
+export function policeGoogleSearchHref(
+  name: string,
+  phoneQuery = "téléphone",
+): string {
+  const query = `${name} Madagascar ${phoneQuery}`;
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 

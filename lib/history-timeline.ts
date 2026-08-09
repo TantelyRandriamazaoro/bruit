@@ -34,6 +34,11 @@ export type HistoryTimeline = {
   defaultSlotId: string | null;
 };
 
+export type HistoryDayLabels = {
+  today: string;
+  yesterday: string;
+};
+
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -45,38 +50,49 @@ function localDayKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatSlotLabel(date: Date): string {
-  return date.toLocaleTimeString(undefined, {
+function formatSlotLabel(date: Date, locale: string): string {
+  return date.toLocaleTimeString(locale, {
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
-function formatHourLabel(date: Date): string {
-  return date.toLocaleTimeString(undefined, {
+function formatHourLabel(date: Date, locale: string): string {
+  return date.toLocaleTimeString(locale, {
     hour: "numeric",
   });
 }
 
-function dayLabel(date: Date, isToday: boolean, isYesterday: boolean): string {
+function dayLabel(
+  date: Date,
+  isToday: boolean,
+  isYesterday: boolean,
+  labels: HistoryDayLabels,
+  locale: string,
+): string {
   if (isToday) {
-    return "Today";
+    return labels.today;
   }
   if (isYesterday) {
-    return "Yesterday";
+    return labels.yesterday;
   }
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
 }
 
-function shortDayLabel(date: Date, isToday: boolean): string {
+function shortDayLabel(
+  date: Date,
+  isToday: boolean,
+  labels: HistoryDayLabels,
+  locale: string,
+): string {
   if (isToday) {
-    return "Today";
+    return labels.today;
   }
-  return date.toLocaleDateString(undefined, { weekday: "short" });
+  return date.toLocaleDateString(locale, { weekday: "short" });
 }
 
 export function reportsInSlot(
@@ -98,6 +114,8 @@ export function buildHistoryTimeline(
   reports: NoiseReport[],
   now = Date.now(),
   dayCount = INSIGHTS_DAYS,
+  locale = "en",
+  dayLabels: HistoryDayLabels = { today: "Today", yesterday: "Yesterday" },
 ): HistoryTimeline {
   const todayStart = startOfLocalDay(new Date(now));
   const yesterdayStart = new Date(todayStart);
@@ -126,8 +144,8 @@ export function buildHistoryTimeline(
     const dayReports = reportsInSlot(reports, startMs, endMs);
     days.push({
       key,
-      label: dayLabel(dayStart, isToday, isYesterday),
-      shortLabel: shortDayLabel(dayStart, isToday),
+      label: dayLabel(dayStart, isToday, isYesterday, dayLabels, locale),
+      shortLabel: shortDayLabel(dayStart, isToday, dayLabels, locale),
       startMs,
       endMs,
       count: dayReports.length,
@@ -156,8 +174,8 @@ export function buildHistoryTimeline(
         index,
         startMs: slotStart,
         endMs: slotEnd,
-        label: formatSlotLabel(startDate),
-        hourLabel: formatHourLabel(startDate),
+        label: formatSlotLabel(startDate, locale),
+        hourLabel: formatHourLabel(startDate, locale),
         count: slotReports.length,
         weight,
         hasReports: slotReports.length > 0,
@@ -199,15 +217,19 @@ export function buildHistoryTimeline(
   };
 }
 
-export function formatHistoryRange(startMs: number, endMs: number): string {
+export function formatHistoryRange(
+  startMs: number,
+  endMs: number,
+  locale = "en",
+): string {
   const start = new Date(startMs);
   const end = new Date(endMs);
-  const dayPart = start.toLocaleDateString(undefined, {
+  const dayPart = start.toLocaleDateString(locale, {
     weekday: "long",
     month: "short",
     day: "numeric",
   });
-  const startTime = formatSlotLabel(start);
-  const endTime = formatSlotLabel(end);
+  const startTime = formatSlotLabel(start, locale);
+  const endTime = formatSlotLabel(end, locale);
   return `${dayPart} · ${startTime}–${endTime}`;
 }

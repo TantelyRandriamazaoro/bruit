@@ -1,16 +1,18 @@
 "use client";
 
 import { ChevronRight, List, Map as MapIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
 import { clusterNearbyReports } from "@/lib/cluster-reports";
 import { formatCoordPair, formatRelativeTime } from "@/lib/format";
-import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import {
-  NOISE_CATEGORIES,
-  NOISE_INTENSITIES,
-} from "@/lib/noise-meta";
+  categoryLabel,
+  intensityLabel,
+  relativeTimeMessages,
+} from "@/lib/i18n-helpers";
+import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import type { NoiseReport } from "@/lib/supabase/types";
 
 type ReportFeedProps = {
@@ -19,18 +21,6 @@ type ReportFeedProps = {
   onSelectReport?: (report: NoiseReport) => void;
   canReport: boolean;
 };
-
-function categoryLabel(category: string | null | undefined) {
-  return (
-    NOISE_CATEGORIES.find((item) => item.id === category)?.label ?? "Noise"
-  );
-}
-
-function intensityLabel(intensity: string | null | undefined) {
-  return (
-    NOISE_INTENSITIES.find((item) => item.id === intensity)?.label ?? "Loud"
-  );
-}
 
 function dominantCategory(reports: NoiseReport[]): string | null | undefined {
   const counts = new Map<string, number>();
@@ -68,9 +58,14 @@ export function ReportFeed({
   onSelectReport,
   canReport,
 }: ReportFeedProps) {
+  const t = useTranslations("Feed");
+  const tCategories = useTranslations("Categories");
+  const tIntensities = useTranslations("Intensities");
+  const tTime = useTranslations("Time");
   const [now, setNow] = useState(() => Date.now());
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [areaLabels, setAreaLabels] = useState<AreaLabelMap>({});
+  const timeMessages = relativeTimeMessages(tTime);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -142,10 +137,10 @@ export function ReportFeed({
     <section className="bruit-feed absolute inset-0 z-10 flex flex-col bg-[var(--bruit-map-wash)]">
       <header className="bruit-feed-header shrink-0 px-5 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))]">
         <h1 className="bruit-brand text-[2.15rem] font-bold tracking-tight text-[var(--bruit-ink)]">
-          Activity
+          {t("title")}
         </h1>
         <p className="mt-1 text-[0.94rem] font-medium leading-snug text-[var(--bruit-muted)]">
-          Nearby reports are grouped · last 7 days
+          {t("subtitle")}
         </p>
       </header>
 
@@ -156,10 +151,10 @@ export function ReportFeed({
               <List size={24} strokeWidth={1.7} aria-hidden />
             </div>
             <p className="text-[1.2rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-              No Activity
+              {t("emptyTitle")}
             </p>
             <p className="mt-1.5 text-[0.92rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-              When people report loud noise nearby, it shows up here.
+              {t("emptyBody")}
             </p>
             <button
               type="button"
@@ -167,7 +162,7 @@ export function ReportFeed({
               disabled={!canReport}
               className="bruit-primary-btn mt-6 cursor-pointer px-7 disabled:cursor-not-allowed disabled:opacity-55"
             >
-              Report Noise
+              {t("reportNoise")}
             </button>
           </div>
         ) : (
@@ -208,18 +203,24 @@ export function ReportFeed({
                             <span className="min-w-0 flex-1 py-0.5">
                               <span className="flex items-baseline justify-between gap-3">
                                 <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                                  {areaName ?? "Looking up area…"}
+                                  {areaName ?? t("lookingUpArea")}
                                 </span>
                                 <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
-                                  {formatRelativeTime(newest.created_at, now)}
+                                  {formatRelativeTime(
+                                    newest.created_at,
+                                    timeMessages,
+                                    now,
+                                  )}
                                 </span>
                               </span>
                               <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-                                {cluster.reports.length} reports
+                                {t("reportsCount", {
+                                  count: cluster.reports.length,
+                                })}
                                 <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                                   ·
                                 </span>
-                                {categoryLabel(category)}
+                                {categoryLabel(tCategories, category)}
                               </span>
                             </span>
                             <Chevron expanded={expanded} />
@@ -228,8 +229,8 @@ export function ReportFeed({
                             type="button"
                             onClick={() => onSelectReport?.(newest)}
                             className="bruit-feed-map-btn cursor-pointer"
-                            aria-label="Show this area on the map"
-                            title="Show on map"
+                            aria-label={t("showOnMap")}
+                            title={t("showOnMapShort")}
                           >
                             <MapIcon size={16} strokeWidth={1.7} aria-hidden />
                           </button>
@@ -254,14 +255,24 @@ export function ReportFeed({
                                   <span className="min-w-0 flex-1 py-0.5">
                                     <span className="flex items-baseline justify-between gap-3">
                                       <span className="truncate text-[0.95rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                                        {categoryLabel(report.category)}
+                                        {categoryLabel(
+                                          tCategories,
+                                          report.category,
+                                        )}
                                       </span>
                                       <span className="shrink-0 text-[0.74rem] font-medium tabular-nums text-[var(--bruit-muted)]">
-                                        {formatRelativeTime(report.created_at, now)}
+                                        {formatRelativeTime(
+                                          report.created_at,
+                                          timeMessages,
+                                          now,
+                                        )}
                                       </span>
                                     </span>
                                     <span className="mt-0.5 block truncate text-[0.8rem] font-medium text-[var(--bruit-muted)]">
-                                      {intensityLabel(report.intensity)}
+                                      {intensityLabel(
+                                        tIntensities,
+                                        report.intensity,
+                                      )}
                                     </span>
                                   </span>
                                   <Chevron />
@@ -287,14 +298,18 @@ export function ReportFeed({
                         <span className="min-w-0 flex-1 py-0.5">
                           <span className="flex items-baseline justify-between gap-3">
                             <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                              {categoryLabel(newest.category)}
+                              {categoryLabel(tCategories, newest.category)}
                             </span>
                             <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
-                              {formatRelativeTime(newest.created_at, now)}
+                              {formatRelativeTime(
+                                newest.created_at,
+                                timeMessages,
+                                now,
+                              )}
                             </span>
                           </span>
                           <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-                            {intensityLabel(newest.intensity)}
+                            {intensityLabel(tIntensities, newest.intensity)}
                             <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                               ·
                             </span>

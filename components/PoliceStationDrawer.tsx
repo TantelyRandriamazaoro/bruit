@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
-import { ChevronRight, Phone, Search, Siren, X } from "lucide-react";
+import { ChevronRight, Phone, Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Drawer } from "vaul";
 import {
   formatPolicePhone,
@@ -113,6 +114,9 @@ export function PoliceStationDrawer({
   container = null,
   onClose,
 }: PoliceStationDrawerProps) {
+  const t = useTranslations("Police");
+  const tCommon = useTranslations("Common");
+  const tHelp = useTranslations("Help");
   const titleId = useId();
   const descriptionId = useId();
   const open = station !== null;
@@ -120,6 +124,7 @@ export function PoliceStationDrawer({
   const phoneDisplay = station?.phone
     ? formatPolicePhone(station.phone)
     : null;
+  const phoneQuery = tHelp("phoneQuery");
 
   return (
     <Drawer.Root
@@ -143,25 +148,18 @@ export function PoliceStationDrawer({
           <Drawer.Handle className="bruit-drawer-handle mx-auto mt-2 mb-0.5" />
 
           <div className="flex items-start gap-3 px-4 pb-3 pt-2">
-            <span
-              className="bruit-place-badge mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-[0.95rem] text-white"
-              aria-hidden
-            >
-              <Siren size={22} strokeWidth={2} />
-            </span>
-
             <div className="min-w-0 flex-1 pt-0.5">
               <Drawer.Title
                 id={titleId}
                 className="bruit-brand text-[1.35rem] font-bold leading-[1.15] tracking-[-0.03em] text-[var(--bruit-ink)]"
               >
-                {title || "Commissariat"}
+                {title || t("fallbackTitle")}
               </Drawer.Title>
               <Drawer.Description
                 id={descriptionId}
                 className="mt-1 text-[0.9rem] font-medium leading-snug text-[var(--bruit-muted)]"
               >
-                Police station
+                {t("station")}
                 {phoneDisplay ? ` · ${phoneDisplay}` : ""}
               </Drawer.Description>
             </div>
@@ -170,7 +168,7 @@ export function PoliceStationDrawer({
               type="button"
               onClick={onClose}
               className="bruit-icon-btn mt-0.5 cursor-pointer"
-              aria-label="Close"
+              aria-label={tCommon("close")}
             >
               <X size={14} strokeWidth={2.2} aria-hidden />
             </button>
@@ -181,20 +179,20 @@ export function PoliceStationDrawer({
               <div
                 className="bruit-place-actions flex overflow-hidden rounded-[1.05rem]"
                 role="group"
-                aria-label="Actions"
+                aria-label={tCommon("actions")}
               >
                 {station.phone ? (
                   <ActionCell
                     href={policePhoneHref(station.phone)}
-                    label="Call"
+                    label={tCommon("call")}
                     tone="call"
                   >
                     <Phone size={20} strokeWidth={2} />
                   </ActionCell>
                 ) : null}
                 <ActionCell
-                  href={policeGoogleSearchHref(station.name)}
-                  label="Search"
+                  href={policeGoogleSearchHref(station.name, phoneQuery)}
+                  label={tCommon("search")}
                   tone="search"
                   external
                   showDivider={Boolean(station.phone)}
@@ -207,15 +205,15 @@ export function PoliceStationDrawer({
                 {station.phone ? (
                   <DetailRow
                     href={policePhoneHref(station.phone)}
-                    label="Phone"
+                    label={t("phone")}
                     value={phoneDisplay ?? station.phone}
                     leading={<Phone size={15} strokeWidth={2} />}
                   />
                 ) : null}
                 <DetailRow
-                  href={policeGoogleSearchHref(station.name)}
-                  label={station.phone ? "Find another number" : "Phone number"}
-                  value="Search on Google"
+                  href={policeGoogleSearchHref(station.name, phoneQuery)}
+                  label={station.phone ? t("findAnother") : t("phoneNumber")}
+                  value={t("searchGoogle")}
                   external
                   showSeparator={Boolean(station.phone)}
                   leading={<Search size={15} strokeWidth={2} />}

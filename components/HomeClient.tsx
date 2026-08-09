@@ -1,11 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AboutSheet } from "@/components/AboutSheet";
 import { HelpContacts } from "@/components/HelpContacts";
 import { InsightsView } from "@/components/InsightsView";
 import { MapChrome } from "@/components/MapChrome";
+import { MapLoading } from "@/components/MapLoading";
 import { PoliceStationDrawer } from "@/components/PoliceStationDrawer";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
@@ -33,13 +35,7 @@ const MapView = dynamic(
   () => import("@/components/MapView").then((m) => m.MapView),
   {
     ssr: false,
-    loading: () => (
-      <div className="absolute inset-0 flex items-center justify-center bg-[var(--bruit-map-wash)]">
-        <p className="text-sm font-medium text-[var(--bruit-muted)]">
-          Loading map…
-        </p>
-      </div>
-    ),
+    loading: () => <MapLoading />,
   },
 );
 
@@ -53,6 +49,7 @@ type Status = {
 const configured = isSupabaseConfigured();
 
 export function HomeClient() {
+  const t = useTranslations("Status");
   const [reports, setReports] = useState<NoiseReport[]>([]);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -85,11 +82,9 @@ export function HomeClient() {
       setLoadError(null);
     } catch (err) {
       console.error(err);
-      setLoadError(
-        "Could not load noise reports. Check your Supabase project and migration.",
-      );
+      setLoadError(t("loadError"));
     }
-  }, [configured]);
+  }, [configured, t]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -128,7 +123,7 @@ export function HomeClient() {
 
     if (!navigator.geolocation) {
       const timeout = window.setTimeout(() => {
-        setLocationError("Geolocation is not supported in this browser.");
+        setLocationError(t("geoUnsupported"));
       }, 0);
       return () => window.clearTimeout(timeout);
     }
@@ -143,16 +138,14 @@ export function HomeClient() {
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
-          setLocationError(
-            "Location access is off. Enable it in browser settings to report.",
-          );
+          setLocationError(t("locationOff"));
         } else {
-          setLocationError("Could not get your location right now.");
+          setLocationError(t("locationUnavailable"));
         }
       },
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
     );
-  }, [hydrated]);
+  }, [hydrated, t]);
 
   useEffect(() => {
     if (activeTab !== "map") {
@@ -167,7 +160,7 @@ export function HomeClient() {
   const openDrawer = () => {
     if (!configured) {
       setStatus({
-        message: "Add your Bruit Supabase keys to .env.local to report.",
+        message: t("missingEnv"),
         tone: "error",
       });
       return;
@@ -175,7 +168,7 @@ export function HomeClient() {
 
     if (!navigator.geolocation) {
       setStatus({
-        message: "Geolocation is not supported in this browser.",
+        message: t("geoUnsupported"),
         tone: "error",
       });
       return;
@@ -216,12 +209,14 @@ export function HomeClient() {
               setCooldownMs(getCooldownRemainingMs());
               setDrawerOpen(false);
               setStatus({
-                message: `You can report again in ${Math.ceil(retryMs / 1000 / 60)} min.`,
+                message: t("rateLimited", {
+                  minutes: Math.ceil(retryMs / 1000 / 60),
+                }),
                 tone: "error",
               });
             } else {
               setStatus({
-                message: "Could not submit that report. Try again.",
+                message: t("submitFailed"),
                 tone: "error",
               });
             }
@@ -233,7 +228,7 @@ export function HomeClient() {
           setDrawerOpen(false);
           setActiveTab("feed");
           setStatus({
-            message: "Noise reported. Thank you.",
+            message: t("reported"),
             tone: "success",
           });
           void resolveAreaLabels([{ lat, lng }]);
@@ -241,7 +236,7 @@ export function HomeClient() {
         } catch (err) {
           console.error(err);
           setStatus({
-            message: "Network error while reporting. Try again.",
+            message: t("networkError"),
             tone: "error",
           });
         } finally {
@@ -251,16 +246,14 @@ export function HomeClient() {
       (err) => {
         setBusy(false);
         if (err.code === err.PERMISSION_DENIED) {
-          setLocationError(
-            "Location access is off. Enable it in browser settings to report.",
-          );
+          setLocationError(t("locationOff"));
           setStatus({
-            message: "Allow location access to report noise.",
+            message: t("allowLocation"),
             tone: "error",
           });
         } else {
           setStatus({
-            message: "Could not get your location. Try again.",
+            message: t("locationRetry"),
             tone: "error",
           });
         }
@@ -361,10 +354,7 @@ export function HomeClient() {
 
       {!configured && activeTab === "map" && !drawerOpen && !policeDrawerOpen ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-ink)]">
-          Missing Supabase env. Copy{" "}
-          <code className="font-mono text-xs">.env.example</code> to{" "}
-          <code className="font-mono text-xs">.env.local</code> with your Bruit
-          project URL and publishable key.
+          {t("missingEnvBanner")}
         </div>
       ) : null}
 

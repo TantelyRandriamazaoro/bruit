@@ -2,6 +2,7 @@
 
 import { ChartColumn, ChevronLeft, ChevronRight } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { HistoryScrubber } from "@/components/HistoryScrubber";
 import type { AreaLabelMap } from "@/lib/area-cell";
@@ -14,12 +15,16 @@ import {
   buildMunicipalInsights,
   buildScopedReportInsights,
   formatPercent,
-  formatWeekDelta,
-  hotspotStatusLabel,
   type HotspotStatus,
   type NoiseHotspot,
 } from "@/lib/insights";
 import { formatHistoryRange } from "@/lib/history-timeline";
+import {
+  categoryLabel,
+  formatWeekDeltaMessage,
+  hotspotStatusLabel,
+  intensityLabel,
+} from "@/lib/i18n-helpers";
 import type { NoiseIntensity } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
@@ -69,12 +74,10 @@ function Chevron() {
 function labeledHotspot(
   hotspot: NoiseHotspot,
   labels: AreaLabelMap,
+  fallbackLabel: string,
 ): NoiseHotspot {
   const name = labels[hotspot.cellKey];
-  if (!name) {
-    return hotspot;
-  }
-  return { ...hotspot, label: name };
+  return { ...hotspot, label: name ?? fallbackLabel };
 }
 
 function HotspotDetail({
@@ -86,9 +89,29 @@ function HotspotDetail({
   onBack: () => void;
   onShowMap: () => void;
 }) {
+  const t = useTranslations("Insights");
+  const tCommon = useTranslations("Common");
+  const tCategories = useTranslations("Categories");
+  const tIntensities = useTranslations("Intensities");
+  const locale = useLocale();
+  const dayLabels = useMemo(
+    () => ({
+      today: tCommon("today"),
+      yesterday: tCommon("yesterday"),
+    }),
+    [tCommon],
+  );
+
   const timeline = useMemo(
-    () => buildHistoryTimeline(hotspot.reports),
-    [hotspot.reports],
+    () =>
+      buildHistoryTimeline(
+        hotspot.reports,
+        Date.now(),
+        undefined,
+        locale,
+        dayLabels,
+      ),
+    [hotspot.reports, locale, dayLabels],
   );
   const [historyDayKey, setHistoryDayKey] = useState<string | null>(
     timeline.defaultDayKey,
@@ -98,13 +121,19 @@ function HotspotDetail({
   );
 
   useEffect(() => {
-    const next = buildHistoryTimeline(hotspot.reports);
+    const next = buildHistoryTimeline(
+      hotspot.reports,
+      Date.now(),
+      undefined,
+      locale,
+      dayLabels,
+    );
     const frame = window.requestAnimationFrame(() => {
       setHistoryDayKey(next.defaultDayKey);
       setHistorySlotId(next.defaultSlotId);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [hotspot.id, hotspot.reports]);
+  }, [hotspot.id, hotspot.reports, locale, dayLabels]);
 
   const activeDay = useMemo(
     () => timeline.days.find((day) => day.key === historyDayKey) ?? null,
@@ -138,22 +167,23 @@ function HotspotDetail({
   }, [activeSlot, dayReports, hotspot.reports]);
 
   const dayInsights = useMemo(
-    () => buildScopedReportInsights(dayReports),
-    [dayReports],
+    () => buildScopedReportInsights(dayReports, locale),
+    [dayReports, locale],
   );
   const slotInsights = useMemo(
-    () => buildScopedReportInsights(slotReports),
-    [slotReports],
+    () => buildScopedReportInsights(slotReports, locale),
+    [slotReports, locale],
   );
 
   const daySlots = historyDayKey
     ? (timeline.slotsByDay[historyDayKey] ?? [])
     : [];
   const slotMax = Math.max(1, ...daySlots.map((slot) => slot.weight));
+  const dayName = activeDay?.label ?? t("dayFallback");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col animate-[bruit-fade-in_180ms_ease-out]">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
         <header className="px-2 pb-2 pt-[max(0.45rem,env(safe-area-inset-top))]">
           <div className="flex items-center justify-between gap-2">
             <button
@@ -162,14 +192,14 @@ function HotspotDetail({
               className="bruit-nav-back cursor-pointer"
             >
               <ChevronLeft size={18} strokeWidth={2.1} aria-hidden />
-              Insights
+              {t("title")}
             </button>
             <button
               type="button"
               onClick={onShowMap}
               className="cursor-pointer rounded-full px-3 py-1.5 text-[1.02rem] font-semibold text-[var(--bruit-accent)] transition-colors duration-150 hover:bg-[rgba(0,122,255,0.08)]"
             >
-              Map
+              {tCommon("map")}
             </button>
           </div>
           <div className="flex items-start justify-between gap-3 px-3 pt-1">
@@ -179,12 +209,12 @@ function HotspotDetail({
             <span
               className={`bruit-status-pill mt-1 shrink-0 ${STATUS_TONE[hotspot.status]}`}
             >
-              {hotspotStatusLabel(hotspot.status)}
+              {hotspotStatusLabel(t, hotspot.status)}
             </span>
           </div>
         </header>
 
-        <div className="mx-auto flex max-w-lg flex-col gap-5 px-4">
+        <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-5 px-4">
           <HistoryScrubber
             reports={hotspot.reports}
             dayKey={historyDayKey}
@@ -205,49 +235,61 @@ function HotspotDetail({
             <div className="flex items-center justify-between gap-3 px-4 py-2.5">
               <p className="min-w-0 truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
                 {activeSlot
-                  ? formatHistoryRange(activeSlot.startMs, activeSlot.endMs)
-                  : "Selected period"}
+                  ? formatHistoryRange(
+                      activeSlot.startMs,
+                      activeSlot.endMs,
+                      locale,
+                    )
+                  : t("selectedPeriod")}
               </p>
               <p className="shrink-0 text-[0.84rem] font-semibold tabular-nums text-[var(--bruit-ink)]">
-                {slotReports.length} report
-                {slotReports.length === 1 ? "" : "s"}
+                {t("reportsCount", { count: slotReports.length })}
               </p>
             </div>
           </div>
 
           <div className="bruit-insight-hero">
             <p className="text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]">
-              This Half-Hour
+              {t("thisHalfHour")}
             </p>
             <p className="mt-1 flex items-baseline gap-2">
               <span className="bruit-brand text-[3.1rem] font-bold leading-none tracking-tight text-[var(--bruit-ink)] tabular-nums">
                 {slotInsights.total}
               </span>
               <span className="text-[1rem] font-semibold text-[var(--bruit-muted)]">
-                {slotInsights.total === 1 ? "report" : "reports"}
+                {slotInsights.total === 1
+                  ? tCommon("report")
+                  : tCommon("reports")}
               </span>
             </p>
             <p className="mt-2 text-[0.92rem] font-medium text-[var(--bruit-muted)]">
-              {activeDay ? `${dayInsights.total} all day` : "No day selected"}
+              {activeDay
+                ? t("allDay", { count: dayInsights.total })
+                : t("noDaySelected")}
               {slotInsights.topCategory ? (
                 <>
                   <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                     ·
                   </span>
-                  Mostly {slotInsights.topCategory.label.toLowerCase()}
+                  {t("mostly", {
+                    category: categoryLabel(
+                      tCategories,
+                      slotInsights.topCategory.id,
+                    ).toLowerCase(),
+                  })}
                 </>
               ) : slotInsights.total === 0 ? (
                 <>
                   <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                     ·
                   </span>
-                  Quiet right now
+                  {t("quietRightNow")}
                 </>
               ) : null}
             </p>
             {dayInsights.peakHourLabel ? (
               <p className="mt-1.5 text-[0.92rem] font-medium text-[var(--bruit-ink)]">
-                Loudest around {dayInsights.peakHourLabel} that day
+                {t("loudestAround", { time: dayInsights.peakHourLabel })}
               </p>
             ) : null}
           </div>
@@ -258,13 +300,13 @@ function HotspotDetail({
                 id="hotspot-day-rhythm-title"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                {activeDay?.label ?? "Day"} Rhythm
+                {t("dayRhythm", { day: dayName })}
               </p>
               <div className="bruit-grouped-list overflow-hidden px-3 py-3.5">
                 <div
                   className="bruit-day-rhythm"
                   role="img"
-                  aria-label={`Half-hour intensity for ${activeDay?.label ?? "selected day"}`}
+                  aria-label={t("halfHourAria", { day: dayName })}
                 >
                   {daySlots.map((slot) => {
                     const height =
@@ -282,7 +324,10 @@ function HotspotDetail({
                         onClick={() => setHistorySlotId(slot.id)}
                         className="bruit-day-rhythm-cell cursor-pointer"
                         title={`${slot.label}: ${slot.count}`}
-                        aria-label={`${slot.label}, ${slot.count} reports`}
+                        aria-label={t("slotAria", {
+                          time: slot.label,
+                          count: slot.count,
+                        })}
                         aria-pressed={selected}
                       >
                         <div className="bruit-day-rhythm-track">
@@ -298,7 +343,7 @@ function HotspotDetail({
                   })}
                 </div>
                 <p className="mt-2 px-1 text-[0.78rem] font-medium text-[var(--bruit-muted)]">
-                  Tap a bar to jump to that half-hour
+                  {t("tapBar")}
                 </p>
               </div>
             </section>
@@ -310,7 +355,7 @@ function HotspotDetail({
                 id="hotspot-sources-title"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                Sources · {activeDay?.label ?? "Day"}
+                {t("sources", { day: dayName })}
               </p>
               <div className="bruit-grouped-list overflow-hidden px-4 py-3">
                 <ul className="flex flex-col gap-3.5">
@@ -318,7 +363,7 @@ function HotspotDetail({
                     <li key={category.id}>
                       <div className="mb-1.5 flex items-baseline justify-between gap-3">
                         <span className="truncate text-[0.98rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                          {category.label}
+                          {categoryLabel(tCategories, category.id)}
                         </span>
                         <span className="shrink-0 text-[0.82rem] font-semibold tabular-nums text-[var(--bruit-muted)]">
                           {formatPercent(category.share)}
@@ -343,10 +388,10 @@ function HotspotDetail({
                 id="hotspot-sources-empty"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                Sources · {activeDay?.label ?? "Day"}
+                {t("sources", { day: dayName })}
               </p>
               <div className="bruit-grouped-list px-4 py-4 text-[0.9rem] font-medium text-[var(--bruit-muted)]">
-                No reports on this day yet.
+                {t("noReportsDay")}
               </div>
             </section>
           )}
@@ -357,7 +402,7 @@ function HotspotDetail({
                 id="hotspot-levels-title"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                Levels · {activeDay?.label ?? "Day"}
+                {t("levels", { day: dayName })}
               </p>
               <div className="bruit-grouped-list overflow-hidden">
                 <ul>
@@ -373,7 +418,7 @@ function HotspotDetail({
                           aria-hidden
                         />
                         <span className="min-w-0 flex-1 truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                          {intensity.label}
+                          {intensityLabel(tIntensities, intensity.id)}
                         </span>
                         <span className="shrink-0 text-[0.92rem] font-semibold tabular-nums text-[var(--bruit-muted)]">
                           {intensity.count}
@@ -384,8 +429,9 @@ function HotspotDetail({
                 </ul>
                 <div className="border-t-[0.5px] border-[var(--bruit-hairline)] px-4 py-3">
                   <p className="text-[0.84rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-                    {formatPercent(dayInsights.loudShare)} of reports that day
-                    were loud or stronger.
+                    {t("loudShare", {
+                      percent: formatPercent(dayInsights.loudShare),
+                    })}
                   </p>
                 </div>
               </div>
@@ -399,7 +445,7 @@ function HotspotDetail({
                 id="hotspot-slot-sources-title"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                Sources · This Half-Hour
+                {t("sourcesHalfHour")}
               </p>
               <div className="bruit-grouped-list overflow-hidden px-4 py-3">
                 <ul className="flex flex-col gap-3.5">
@@ -407,7 +453,7 @@ function HotspotDetail({
                     <li key={category.id}>
                       <div className="mb-1.5 flex items-baseline justify-between gap-3">
                         <span className="truncate text-[0.98rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                          {category.label}
+                          {categoryLabel(tCategories, category.id)}
                         </span>
                         <span className="shrink-0 text-[0.82rem] font-semibold tabular-nums text-[var(--bruit-muted)]">
                           {formatPercent(category.share)}
@@ -433,7 +479,7 @@ function HotspotDetail({
             onClick={onShowMap}
             className="bruit-primary-btn w-full cursor-pointer"
           >
-            Show on Map
+            {t("showOnMap")}
           </button>
         </div>
       </div>
@@ -447,7 +493,26 @@ export function InsightsView({
   canReport,
   onOpenHotspot,
 }: InsightsViewProps) {
-  const insights = useMemo(() => buildMunicipalInsights(reports), [reports]);
+  const t = useTranslations("Insights");
+  const tCommon = useTranslations("Common");
+  const tCategories = useTranslations("Categories");
+  const locale = useLocale();
+
+  const insightLabels = useMemo(
+    () => ({
+      today: tCommon("today"),
+      weekday: (index: number) => t(`weekdays.${index}` as "weekdays.0"),
+      timeSlot: (id: number) => t(`timeSlots.${id}.label` as "timeSlots.0.label"),
+      trend: (status: HotspotStatus) =>
+        t(`trend.${status}` as "trend.new"),
+    }),
+    [t, tCommon],
+  );
+
+  const insights = useMemo(
+    () => buildMunicipalInsights(reports, Date.now(), locale, insightLabels),
+    [reports, locale, insightLabels],
+  );
   const [labels, setLabels] = useState<AreaLabelMap>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -474,8 +539,18 @@ export function InsightsView({
   }, [insights.hotspots]);
 
   const hotspots = useMemo(
-    () => insights.hotspots.map((item) => labeledHotspot(item, labels)),
-    [insights.hotspots, labels],
+    () =>
+      insights.hotspots.map((item) =>
+        labeledHotspot(
+          item,
+          labels,
+          t("nearCoords", {
+            lat: item.lat.toFixed(3),
+            lng: item.lng.toFixed(3),
+          }),
+        ),
+      ),
+    [insights.hotspots, labels, t],
   );
 
   const selected = useMemo(
@@ -490,7 +565,7 @@ export function InsightsView({
     }
   }, [hotspots, selectedId]);
 
-  const weekDelta = formatWeekDelta(insights.deltaVsPreviousWeek);
+  const weekDelta = formatWeekDeltaMessage(t, insights.deltaVsPreviousWeek);
   const hasSignal = hotspots.length > 0 || insights.currentTotal > 0;
 
   if (selected) {
@@ -518,16 +593,16 @@ export function InsightsView({
       className="bruit-feed absolute inset-0 z-10 flex flex-col bg-[var(--bruit-map-wash)]"
       aria-labelledby="insights-title"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)] pt-[max(0.85rem,env(safe-area-inset-top))]">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)] pt-[max(0.85rem,env(safe-area-inset-top))]">
         <header className="pb-3">
           <h1
             id="insights-title"
             className="bruit-brand text-[2.15rem] font-bold tracking-tight text-[var(--bruit-ink)]"
           >
-            Insights
+            {t("title")}
           </h1>
           <p className="mt-1 text-[0.94rem] font-medium leading-snug text-[var(--bruit-muted)]">
-            Choose a hotspot to inspect its patterns
+            {t("subtitle")}
           </p>
         </header>
 
@@ -537,11 +612,10 @@ export function InsightsView({
               <ChartColumn size={24} strokeWidth={1.8} aria-hidden />
             </div>
             <p className="text-[1.2rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-              No Hotspots Yet
+              {t("emptyTitle")}
             </p>
             <p className="mt-1.5 text-[0.92rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-              When nearby reports cluster, each area becomes a hotspot you can
-              open for details.
+              {t("emptyBody")}
             </p>
             <button
               type="button"
@@ -549,26 +623,27 @@ export function InsightsView({
               disabled={!canReport}
               className="bruit-primary-btn mt-6 cursor-pointer px-7 disabled:cursor-not-allowed disabled:opacity-55"
             >
-              Report Noise
+              {t("reportNoise")}
             </button>
           </div>
         ) : (
           <div className="mx-auto flex max-w-lg flex-col gap-5">
             <div className="bruit-insight-hero animate-[bruit-rise_280ms_ease-out]">
               <p className="text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]">
-                This Week
+                {t("thisWeek")}
               </p>
               <p className="mt-1 flex items-baseline gap-2">
                 <span className="bruit-brand text-[3.35rem] font-bold leading-none tracking-tight text-[var(--bruit-ink)] tabular-nums">
                   {insights.hotspotCount}
                 </span>
                 <span className="text-[1rem] font-semibold text-[var(--bruit-muted)]">
-                  hotspot{insights.hotspotCount === 1 ? "" : "s"}
+                  {insights.hotspotCount === 1
+                    ? t("hotspot")
+                    : t("hotspots")}
                 </span>
               </p>
               <p className="mt-2 text-[0.92rem] font-medium text-[var(--bruit-muted)]">
-                {insights.currentTotal} report
-                {insights.currentTotal === 1 ? "" : "s"}
+                {t("reportsCount", { count: insights.currentTotal })}
                 {weekDelta ? (
                   <>
                     <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
@@ -584,7 +659,7 @@ export function InsightsView({
                     {insights.recurringCount}
                   </p>
                   <p className="text-[0.72rem] font-semibold text-[var(--bruit-muted)]">
-                    Recurring
+                    {t("recurring")}
                   </p>
                 </div>
                 <div className="bruit-insight-stat">
@@ -592,7 +667,7 @@ export function InsightsView({
                     {insights.escalatingCount}
                   </p>
                   <p className="text-[0.72rem] font-semibold text-[var(--bruit-muted)]">
-                    Escalating
+                    {t("escalating")}
                   </p>
                 </div>
                 <div className="bruit-insight-stat">
@@ -600,7 +675,7 @@ export function InsightsView({
                     {insights.newCount}
                   </p>
                   <p className="text-[0.72rem] font-semibold text-[var(--bruit-muted)]">
-                    New
+                    {t("new")}
                   </p>
                 </div>
               </div>
@@ -611,7 +686,7 @@ export function InsightsView({
                 id="insights-hotspots-title"
                 className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
               >
-                Hotspots
+                {t("hotspotsSection")}
               </p>
               <div className="bruit-grouped-list overflow-hidden">
                 <ul>
@@ -633,18 +708,19 @@ export function InsightsView({
                             <span
                               className={`bruit-status-pill shrink-0 ${STATUS_TONE[hotspot.status]}`}
                             >
-                              {hotspotStatusLabel(hotspot.status)}
+                              {hotspotStatusLabel(t, hotspot.status)}
                             </span>
                           </span>
                           <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-                            {hotspot.currentCount} this week
+                            {t("thisWeekCount", {
+                              count: hotspot.currentCount,
+                            })}
                             <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                               ·
                             </span>
-                            {hotspot.distinctDays} day
-                            {hotspot.distinctDays === 1 ? "" : "s"}
+                            {t("dayCount", { count: hotspot.distinctDays })}
                             {hotspot.topCategory
-                              ? ` · ${hotspot.topCategory.label}`
+                              ? ` · ${categoryLabel(tCategories, hotspot.topCategory.id)}`
                               : ""}
                           </span>
                         </span>
@@ -657,8 +733,7 @@ export function InsightsView({
             </section>
 
             <p className="px-3 pb-2 text-[0.78rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-              Tap a hotspot for timing, sources, and severity in that area only.
-              Clusters are about 120m across.
+              {t("footer")}
             </p>
           </div>
         )}

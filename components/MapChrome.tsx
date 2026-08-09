@@ -1,15 +1,10 @@
 "use client";
 
 import { Info, LocateFixed, Minus, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { intensityShort } from "@/lib/i18n-helpers";
 import { NOISE_INTENSITIES } from "@/lib/noise-meta";
-
-const LEVEL_SHORT: Record<(typeof NOISE_INTENSITIES)[number]["id"], string> = {
-  moderate: "Noticeable",
-  loud: "Loud",
-  very_loud: "Very",
-  extreme: "Extreme",
-};
 
 type MapChromeProps = {
   reportCount: number;
@@ -30,27 +25,35 @@ export function MapChrome({
   onZoomOut,
   onOpenAbout,
 }: MapChromeProps) {
+  const t = useTranslations("Map");
+  const tIntensities = useTranslations("Intensities");
+  const tCommon = useTranslations("Common");
+
   if (hidden) {
     return null;
   }
 
-  const levelSummary = NOISE_INTENSITIES.map((level) => level.label).join(", ");
+  const levelSummary = NOISE_INTENSITIES.map((level) =>
+    intensityShort(tIntensities, level.id),
+  ).join(", ");
 
   return (
     <>
-      {/* Top-left: noise level legend — Apple Maps / Weather restraint */}
       <div className="pointer-events-none absolute left-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
         <div
           className="bruit-chrome bruit-noise-legend"
           role="img"
-          aria-label={`Noise levels: ${levelSummary}. ${reportCount} live reports in active areas.`}
+          aria-label={t("legendAria", {
+            levels: levelSummary,
+            count: reportCount,
+          })}
         >
           <div className="bruit-noise-legend-header">
-            <span className="bruit-noise-legend-title">Levels</span>
+            <span className="bruit-noise-legend-title">{t("levels")}</span>
             <span className="bruit-noise-legend-meta">
               {reportCount}
               <span className="bruit-noise-legend-meta-sep">·</span>
-              live
+              {tCommon("live")}
             </span>
           </div>
 
@@ -66,14 +69,13 @@ export function MapChrome({
           <div className="bruit-noise-legend-labels" aria-hidden>
             {NOISE_INTENSITIES.map((level) => (
               <span key={level.id} className="bruit-noise-legend-label">
-                {LEVEL_SHORT[level.id]}
+                {intensityShort(tIntensities, level.id)}
               </span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Top-right rail */}
       <div className="pointer-events-none absolute right-3.5 top-0 z-20 flex flex-col items-end gap-2.5 pt-[max(0.7rem,env(safe-area-inset-top))]">
         <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <ThemeToggle />
@@ -83,8 +85,8 @@ export function MapChrome({
           type="button"
           onClick={onOpenAbout}
           className="bruit-chrome bruit-rail-btn pointer-events-auto cursor-pointer"
-          aria-label="About Bruit"
-          title="About"
+          aria-label={t("about")}
+          title={t("aboutShort")}
         >
           <Info size={19} strokeWidth={1.85} aria-hidden />
         </button>
@@ -94,7 +96,7 @@ export function MapChrome({
             type="button"
             onClick={onZoomIn}
             className="bruit-rail-btn-block cursor-pointer"
-            aria-label="Zoom in"
+            aria-label={t("zoomIn")}
           >
             <Plus size={19} strokeWidth={2} aria-hidden />
           </button>
@@ -103,7 +105,7 @@ export function MapChrome({
             type="button"
             onClick={onZoomOut}
             className="bruit-rail-btn-block cursor-pointer"
-            aria-label="Zoom out"
+            aria-label={t("zoomOut")}
           >
             <Minus size={19} strokeWidth={2} aria-hidden />
           </button>
@@ -114,8 +116,8 @@ export function MapChrome({
           onClick={onLocate}
           disabled={!canLocate}
           className="bruit-chrome bruit-rail-btn pointer-events-auto cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Center on my location"
-          title="My location"
+          aria-label={t("locate")}
+          title={t("myLocation")}
         >
           <LocateFixed size={19} strokeWidth={1.85} aria-hidden />
         </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -233,6 +234,7 @@ export function MapView({
   onMapApi,
   onSelectPoliceStation,
 }: MapViewProps) {
+  const t = useTranslations("Map");
   const { resolvedTheme } = useTheme();
   const [themeReady, setThemeReady] = useState(false);
   const mapStyleUrl = mapStyleForTheme(
@@ -298,7 +300,7 @@ export function MapView({
 
     map.on("error", (event) => {
       console.error("MapLibre error:", event.error);
-      setMapError(event.error?.message ?? "Map failed to load.");
+      setMapError(event.error?.message ?? t("failed"));
     });
 
     map.on("load", () => {
@@ -466,7 +468,7 @@ export function MapView({
       <div
         ref={containerRef}
         className="bruit-map absolute inset-0"
-        aria-label="Noise pollution map"
+        aria-label={t("aria")}
       />
       {mapError ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-danger)]">

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { Drawer } from "vaul";
 import { NoiseCategoryIcon } from "@/lib/noise-icons";
@@ -30,6 +31,10 @@ export function ReportDrawer({
   onClose,
   onSubmit,
 }: ReportDrawerProps) {
+  const t = useTranslations("Report");
+  const tCategories = useTranslations("Categories");
+  const tIntensities = useTranslations("Intensities");
+  const tCommon = useTranslations("Common");
   const titleId = useId();
   const descriptionId = useId();
   const [category, setCategory] = useState<NoiseCategory>("traffic");
@@ -64,13 +69,13 @@ export function ReportDrawer({
                 id={titleId}
                 className="bruit-brand text-[1.35rem] font-semibold tracking-tight text-[var(--bruit-ink)]"
               >
-                Report a noise
+                {t("title")}
               </Drawer.Title>
               <Drawer.Description
                 id={descriptionId}
                 className="mt-0.5 text-[0.84rem] font-medium text-[var(--bruit-muted)]"
               >
-                Tell us what you’re hearing
+                {t("subtitle")}
               </Drawer.Description>
             </div>
             <button
@@ -78,7 +83,7 @@ export function ReportDrawer({
               onClick={onClose}
               disabled={busy}
               className="bruit-icon-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Close"
+              aria-label={tCommon("close")}
             >
               <X size={14} strokeWidth={2.2} aria-hidden />
             </button>
@@ -86,7 +91,7 @@ export function ReportDrawer({
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-3">
             <p className="mb-2 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
-              Type
+              {t("type")}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {NOISE_CATEGORIES.map((item) => {
@@ -104,10 +109,10 @@ export function ReportDrawer({
                       <NoiseCategoryIcon category={item.id} size={22} />
                     </span>
                     <span className="block text-[0.92rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                      {item.label}
+                      {tCategories(`${item.id}.label`)}
                     </span>
                     <span className="mt-0.5 block text-[0.72rem] font-medium leading-snug text-[var(--bruit-muted)]">
-                      {item.description}
+                      {tCategories(`${item.id}.description`)}
                     </span>
                   </button>
                 );
@@ -115,7 +120,7 @@ export function ReportDrawer({
             </div>
 
             <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
-              How Loud
+              {t("howLoud")}
             </p>
             <div className="overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               {NOISE_INTENSITIES.map((item, index) => {
@@ -132,10 +137,10 @@ export function ReportDrawer({
                     >
                       <span>
                         <span className="block text-[0.98rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                          {item.label}
+                          {tIntensities(`${item.id}.label`)}
                         </span>
                         <span className="block text-[0.78rem] font-medium text-[var(--bruit-muted)]">
-                          {item.hint}
+                          {tIntensities(`${item.id}.hint`)}
                         </span>
                       </span>
                       <span
@@ -164,7 +169,7 @@ export function ReportDrawer({
               onClick={() => onSubmit({ category, intensity })}
               className="bruit-primary-btn w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {busy ? "Sending…" : "Submit report"}
+              {busy ? t("sending") : t("submit")}
             </button>
           </div>
         </Drawer.Content>

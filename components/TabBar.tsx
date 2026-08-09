@@ -1,6 +1,7 @@
 "use client";
 
 import { ChartColumn, Flag, List, Map as MapIcon, Phone } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import {
   formatCountdown,
@@ -33,13 +34,14 @@ export function TabBar({
   feedCount = 0,
   hidden = false,
 }: TabBarProps) {
+  const t = useTranslations("Tabs");
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (cooldownMs <= 0) {
       return;
     }
-    const id = window.setInterval(() => setTick((t) => t + 1), 250);
+    const id = window.setInterval(() => setTick((n) => n + 1), 250);
     return () => window.clearInterval(id);
   }, [cooldownMs]);
 
@@ -51,10 +53,10 @@ export function TabBar({
   const onCooldown = remaining > 0;
   const progress = onCooldown ? 1 - remaining / COOLDOWN_MS : 0;
   const reportLabel = onCooldown
-    ? `Report available in ${formatCountdown(remaining)}`
+    ? t("reportAvailableIn", { time: formatCountdown(remaining) })
     : busy
-      ? "Sending report"
-      : "Report a noise";
+      ? t("sendingReport")
+      : t("reportNoise");
 
   const toneClass =
     statusTone === "success"
@@ -104,12 +106,12 @@ export function TabBar({
             ) : busy ? (
               <>
                 <span className="bruit-report-fab-spinner" aria-hidden />
-                <span>Sending…</span>
+                <span>{t("sending")}</span>
               </>
             ) : (
               <>
                 <Flag size={18} strokeWidth={2.1} aria-hidden />
-                <span>Report</span>
+                <span>{t("report")}</span>
               </>
             )}
           </span>
@@ -117,7 +119,7 @@ export function TabBar({
       </div>
 
       <nav
-        aria-label="Primary"
+        aria-label={t("primary")}
         className="bruit-tabbar pointer-events-auto grid w-full max-w-lg grid-cols-4 items-end px-1 pb-1.5 pt-1.5"
       >
         <button
@@ -128,8 +130,8 @@ export function TabBar({
           }`}
           aria-current={active === "map" ? "page" : undefined}
         >
-          <MapIcon size={24} strokeWidth={1.7} aria-hidden />
-          <span>Map</span>
+          <MapIcon size={20} strokeWidth={1.7} aria-hidden />
+          <span>{t("map")}</span>
         </button>
 
         <button
@@ -141,14 +143,14 @@ export function TabBar({
           aria-current={active === "feed" ? "page" : undefined}
         >
           <span className="relative inline-flex">
-            <List size={24} strokeWidth={1.7} aria-hidden />
+            <List size={20} strokeWidth={1.7} aria-hidden />
             {feedCount > 0 ? (
               <span className="bruit-tab-badge" aria-hidden>
                 {feedCount > 99 ? "99+" : feedCount}
               </span>
             ) : null}
           </span>
-          <span>Activity</span>
+          <span>{t("activity")}</span>
         </button>
 
         <button
@@ -159,8 +161,8 @@ export function TabBar({
           }`}
           aria-current={active === "insights" ? "page" : undefined}
         >
-          <ChartColumn size={24} strokeWidth={1.7} aria-hidden />
-          <span>Insights</span>
+          <ChartColumn size={20} strokeWidth={1.7} aria-hidden />
+          <span>{t("insights")}</span>
         </button>
 
         <button
@@ -171,8 +173,8 @@ export function TabBar({
           }`}
           aria-current={active === "help" ? "page" : undefined}
         >
-          <Phone size={24} strokeWidth={1.7} aria-hidden />
-          <span>Help</span>
+          <Phone size={20} strokeWidth={1.7} aria-hidden />
+          <span>{t("help")}</span>
         </button>
       </nav>
     </div>
