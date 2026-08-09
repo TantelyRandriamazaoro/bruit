@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
@@ -7,7 +8,8 @@ import {
   type GeoJSONSource,
   type Map,
 } from "maplibre-gl";
-import { MAP_STYLE_URL } from "@/lib/constants";
+import { mapStyleForTheme } from "@/lib/constants";
+import { softenDarkBasemapRoads } from "@/lib/map-style";
 import { intensityWeight } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
@@ -51,16 +53,33 @@ export function HotspotMiniMap({
   reports,
   label,
 }: HotspotMiniMapProps) {
+  const { resolvedTheme } = useTheme();
+  const [themeReady, setThemeReady] = useState(false);
+  const mapStyleUrl = mapStyleForTheme(
+    resolvedTheme === "dark" ? "dark" : "light",
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
+  const reportsRef = useRef(reports);
   const [failed, setFailed] = useState(false);
+  const [styleReady, setStyleReady] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) {
+    const frame = window.requestAnimationFrame(() => setThemeReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    reportsRef.current = reports;
+  }, [reports]);
+
+  useEffect(() => {
+    if (!containerRef.current || !themeReady) {
       return;
     }
 
     ensureMapLibreWorker();
+    setFailed(false);
 
     const container = containerRef.current;
     let map: Map;
@@ -68,7 +87,7 @@ export function HotspotMiniMap({
     try {
       map = new MapLibreMap({
         container,
-        style: MAP_STYLE_URL,
+        style: mapStyleUrl,
         center: [lng, lat],
         zoom: 14.2,
         interactive: false,
@@ -98,9 +117,12 @@ export function HotspotMiniMap({
 
     map.on("load", () => {
       map.resize();
+      if (mapStyleUrl.includes("dark-matter")) {
+        softenDarkBasemapRoads(map);
+      }
       map.addSource("hotspot-reports", {
         type: "geojson",
-        data: reportsToGeoJSON(reports),
+        data: reportsToGeoJSON(reportsRef.current),
       });
       map.addLayer({
         id: "hotspot-heat",
@@ -129,6 +151,7 @@ export function HotspotMiniMap({
           ],
         },
       });
+      setStyleReady(true);
     });
 
     mapRef.current = map;
@@ -137,30 +160,24 @@ export function HotspotMiniMap({
       resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
+      setStyleReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once per card
-  }, []);
+    // lat/lng updates handled below; recreate only when basemap theme changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapStyleUrl, themeReady]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) {
+    if (!map || !styleReady) {
       return;
     }
 
-    const update = () => {
-      map.jumpTo({ center: [lng, lat], zoom: 14.2 });
-      const source = map.getSource("hotspot-reports") as
-        | GeoJSONSource
-        | undefined;
-      source?.setData(reportsToGeoJSON(reports));
-    };
-
-    if (map.isStyleLoaded() && map.getSource("hotspot-reports")) {
-      update();
-    } else {
-      map.once("load", update);
-    }
-  }, [lat, lng, reports]);
+    map.jumpTo({ center: [lng, lat], zoom: 14.2 });
+    const source = map.getSource("hotspot-reports") as
+      | GeoJSONSource
+      | undefined;
+    source?.setData(reportsToGeoJSON(reports));
+  }, [lat, lng, reports, styleReady]);
 
   if (failed) {
     return (
