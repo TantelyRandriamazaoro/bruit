@@ -21,11 +21,13 @@ export const DEFAULT_CENTER = {
 
 export const DEFAULT_ZOOM = 13;
 
-/** Carto Positron — clean light basemap close to Apple Maps */
+/**
+ * Carto Positron / Dark Matter vectors — paint is remapped in
+ * `applyGoogleMapsBasemapTheme` toward the current Google Maps roadmap.
+ */
 export const MAP_STYLE_LIGHT_URL =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
-/** Carto Dark Matter — OLED-friendly dark basemap */
 export const MAP_STYLE_DARK_URL =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 

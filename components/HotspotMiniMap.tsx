@@ -9,7 +9,7 @@ import {
   type Map,
 } from "maplibre-gl";
 import { mapStyleForTheme } from "@/lib/constants";
-import { softenDarkBasemapRoads } from "@/lib/map-style";
+import { applyGoogleMapsBasemapTheme } from "@/lib/map-style";
 import { intensityWeight } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
@@ -117,9 +117,10 @@ export function HotspotMiniMap({
 
     map.on("load", () => {
       map.resize();
-      if (mapStyleUrl.includes("dark-matter")) {
-        softenDarkBasemapRoads(map);
-      }
+      applyGoogleMapsBasemapTheme(
+        map,
+        mapStyleUrl.includes("dark-matter") ? "dark" : "light",
+      );
       map.addSource("hotspot-reports", {
         type: "geojson",
         data: reportsToGeoJSON(reportsRef.current),

@@ -17,7 +17,7 @@ import {
   DEFAULT_ZOOM,
   mapStyleForTheme,
 } from "@/lib/constants";
-import { softenDarkBasemapRoads } from "@/lib/map-style";
+import { applyGoogleMapsBasemapTheme } from "@/lib/map-style";
 import { liveMapWeight } from "@/lib/live-map";
 import {
   createLucideMarkerIcon,
@@ -146,13 +146,15 @@ function addPoliceStationsLayer(map: Map, isDark: boolean) {
     return;
   }
 
-  if (!map.hasImage("police-phone")) {
-    map.addImage(
-      "police-phone",
-      createLucideMarkerIcon(PHONE_ICON_NODE, PHONE_MARKER_COLORS, 128),
-      { pixelRatio: 2 },
-    );
+  const phoneImageId = "police-phone-pin";
+  if (map.hasImage(phoneImageId)) {
+    map.removeImage(phoneImageId);
   }
+  map.addImage(
+    phoneImageId,
+    createLucideMarkerIcon(PHONE_ICON_NODE, PHONE_MARKER_COLORS, 160),
+    { pixelRatio: 2 },
+  );
 
   map.addSource("police-stations", {
     type: "geojson",
@@ -169,14 +171,15 @@ function addPoliceStationsLayer(map: Map, isDark: boolean) {
         ["linear"],
         ["zoom"],
         10,
-        13,
+        9,
         14,
+        12,
         17,
-        17,
-        22,
+        16,
       ],
-      "circle-color": "rgba(52, 199, 89, 0.18)",
-      "circle-opacity": 0.9,
+      "circle-color": "rgba(52, 199, 89, 0.2)",
+      "circle-opacity": 0.8,
+      "circle-blur": 0.45,
     },
   });
 
@@ -185,19 +188,20 @@ function addPoliceStationsLayer(map: Map, isDark: boolean) {
     type: "symbol",
     source: "police-stations",
     layout: {
-      "icon-image": "police-phone",
+      "icon-image": phoneImageId,
       "icon-size": [
         "interpolate",
         ["linear"],
         ["zoom"],
         10,
-        0.52,
+        0.38,
         14,
-        0.7,
+        0.52,
         17,
-        0.84,
+        0.64,
       ],
-      "icon-anchor": "center",
+      "icon-anchor": "bottom",
+      "icon-offset": [0, 2],
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
     },
@@ -212,7 +216,7 @@ function addPoliceStationsLayer(map: Map, isDark: boolean) {
       "text-field": ["get", "name"],
       "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
       "text-size": 11,
-      "text-offset": [0, 1.75],
+      "text-offset": [0, 0.45],
       "text-anchor": "top",
       "text-max-width": 10,
       "text-optional": true,
@@ -306,11 +310,10 @@ export function MapView({
     map.on("load", () => {
       setMapError(null);
       map.resize();
-      if (mapStyleUrl.includes("dark-matter")) {
-        softenDarkBasemapRoads(map);
-      }
+      const isDark = mapStyleUrl.includes("dark-matter");
+      applyGoogleMapsBasemapTheme(map, isDark ? "dark" : "light");
       addNoiseHeatLayer(map, reportsRef.current, heatmapVisibleRef.current);
-      addPoliceStationsLayer(map, mapStyleUrl.includes("dark-matter"));
+      addPoliceStationsLayer(map, isDark);
       setStyleReady(true);
 
       const selectPoliceStation = (event: MapLayerMouseEvent) => {
