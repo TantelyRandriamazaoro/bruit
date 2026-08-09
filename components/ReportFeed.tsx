@@ -1,14 +1,15 @@
 "use client";
 
+import { ChevronRight, List, Map as MapIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
 import { clusterNearbyReports } from "@/lib/cluster-reports";
 import { formatCoordPair, formatRelativeTime } from "@/lib/format";
+import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import {
   NOISE_CATEGORIES,
   NOISE_INTENSITIES,
-  type NoiseCategory,
 } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
@@ -48,114 +49,16 @@ function dominantCategory(reports: NoiseReport[]): string | null | undefined {
   return best;
 }
 
-function FeedIcon({ category }: { category: string | null | undefined }) {
-  const id = (category ?? "other") as NoiseCategory;
-  const common = {
-    width: 17,
-    height: 17,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    "aria-hidden": true as const,
-  };
-
-  switch (id) {
-    case "traffic":
-      return (
-        <svg {...common}>
-          <path
-            d="M5 16h14l-1.2-7.2A2 2 0 0 0 15.84 7H8.16a2 2 0 0 0-1.96 1.8L5 16Z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinejoin="round"
-          />
-          <circle cx="7.5" cy="16.5" r="1.3" fill="currentColor" />
-          <circle cx="16.5" cy="16.5" r="1.3" fill="currentColor" />
-        </svg>
-      );
-    case "construction":
-      return (
-        <svg {...common}>
-          <path
-            d="M14 5 8 11l5 5 6-6-2.5-2.5"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "party":
-      return (
-        <svg {...common}>
-          <path
-            d="M9 18V8.5a3.5 3.5 0 1 1 3.5 3.5H9"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "animals":
-      return (
-        <svg {...common}>
-          <circle cx="9" cy="10" r="1.25" fill="currentColor" />
-          <circle cx="15" cy="10" r="1.25" fill="currentColor" />
-          <path
-            d="M12 13c2.2 0 4 1.2 4 2.8V18H8v-2.2C8 14.2 9.8 13 12 13Z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "industry":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 20V10l5 3V10l5 3V8h3v12H4Z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.7" />
-          <path
-            d="M12 9v3.5"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-          />
-          <circle cx="12" cy="15.5" r="1" fill="currentColor" />
-        </svg>
-      );
-  }
-}
-
 function Chevron({ expanded }: { expanded?: boolean }) {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
+    <ChevronRight
+      size={14}
+      strokeWidth={2}
       className={`shrink-0 text-[var(--bruit-hairline-strong)] transition-transform duration-200 ${
         expanded ? "rotate-90" : ""
       }`}
       aria-hidden
-    >
-      <path
-        d="M4 1.5 8.5 6 4 10.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 
@@ -250,14 +153,7 @@ export function ReportFeed({
         {reports.length === 0 ? (
           <div className="mx-auto mt-10 max-w-sm px-2 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bruit-surface)] text-[var(--bruit-accent)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M5 7h14M5 12h14M5 17h10"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <List size={24} strokeWidth={1.7} aria-hidden />
             </div>
             <p className="text-[1.2rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
               No Activity
@@ -300,7 +196,11 @@ export function ReportFeed({
                             aria-expanded={expanded}
                           >
                             <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
-                              <FeedIcon category={category} />
+                              <NoiseCategoryIcon
+                                category={category}
+                                size={17}
+                                strokeWidth={1.7}
+                              />
                               <span className="bruit-cluster-badge" aria-hidden>
                                 {cluster.reports.length}
                               </span>
@@ -331,20 +231,7 @@ export function ReportFeed({
                             aria-label="Show this area on the map"
                             title="Show on map"
                           >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              aria-hidden
-                            >
-                              <path
-                                d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5Z"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            <MapIcon size={16} strokeWidth={1.7} aria-hidden />
                           </button>
                         </div>
 
@@ -358,7 +245,11 @@ export function ReportFeed({
                                   className="bruit-feed-row bruit-feed-row-nested w-full cursor-pointer text-left transition-colors duration-150"
                                 >
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.08)] text-[var(--bruit-accent)]">
-                                    <FeedIcon category={report.category} />
+                                    <NoiseCategoryIcon
+                                      category={report.category}
+                                      size={15}
+                                      strokeWidth={1.7}
+                                    />
                                   </span>
                                   <span className="min-w-0 flex-1 py-0.5">
                                     <span className="flex items-baseline justify-between gap-3">
@@ -387,7 +278,11 @@ export function ReportFeed({
                         className="bruit-feed-row w-full cursor-pointer text-left transition-colors duration-150"
                       >
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
-                          <FeedIcon category={newest.category} />
+                          <NoiseCategoryIcon
+                            category={newest.category}
+                            size={17}
+                            strokeWidth={1.7}
+                          />
                         </span>
                         <span className="min-w-0 flex-1 py-0.5">
                           <span className="flex items-baseline justify-between gap-3">

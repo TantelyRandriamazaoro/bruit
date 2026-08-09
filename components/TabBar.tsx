@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartColumn, Flag, List, Map as MapIcon, Phone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   formatCountdown,
@@ -20,23 +21,6 @@ type TabBarProps = {
   feedCount?: number;
   hidden?: boolean;
 };
-
-function FlagIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M6 3.75v16.5"
-        stroke="currentColor"
-        strokeWidth="2.1"
-        strokeLinecap="round"
-      />
-      <path
-        d="M6.9 4.6h9.4c.85 0 1.35.92.9 1.62l-.85 1.32a1.2 1.2 0 0 0 0 1.32l.85 1.32c.45.7-.05 1.62-.9 1.62H6.9"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 export function TabBar({
   active,
@@ -124,7 +108,7 @@ export function TabBar({
               </>
             ) : (
               <>
-                <FlagIcon />
+                <Flag size={18} strokeWidth={2.1} aria-hidden />
                 <span>Report</span>
               </>
             )}
@@ -144,20 +128,7 @@ export function TabBar({
           }`}
           aria-current={active === "map" ? "page" : undefined}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M9 4.5v13M15 6.5v13"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
+          <MapIcon size={24} strokeWidth={1.7} aria-hidden />
           <span>Map</span>
         </button>
 
@@ -170,14 +141,7 @@ export function TabBar({
           aria-current={active === "feed" ? "page" : undefined}
         >
           <span className="relative inline-flex">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M5 7h14M5 12h14M5 17h10"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-            </svg>
+            <List size={24} strokeWidth={1.7} aria-hidden />
             {feedCount > 0 ? (
               <span className="bruit-tab-badge" aria-hidden>
                 {feedCount > 99 ? "99+" : feedCount}
@@ -195,14 +159,7 @@ export function TabBar({
           }`}
           aria-current={active === "insights" ? "page" : undefined}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M5 17V11M10 17V7M15 17v-4M20 17V5"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
+          <ChartColumn size={24} strokeWidth={1.7} aria-hidden />
           <span>Insights</span>
         </button>
 
@@ -214,14 +171,7 @@ export function TabBar({
           }`}
           aria-current={active === "help" ? "page" : undefined}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M8.5 4.5h2.2l1.1 3.3-1.4 1.4a12.5 12.5 0 0 0 4.9 4.9l1.4-1.4 3.3 1.1v2.2A2.2 2.2 0 0 1 17.8 18 13.8 13.8 0 0 1 6 6.2 2.2 2.2 0 0 1 8.5 4.5Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Phone size={24} strokeWidth={1.7} aria-hidden />
           <span>Help</span>
         </button>
       </nav>

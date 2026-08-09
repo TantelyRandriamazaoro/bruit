@@ -1,5 +1,6 @@
 "use client";
 
+import { Info, LocateFixed, Minus, Plus } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NOISE_INTENSITIES } from "@/lib/noise-meta";
 
@@ -42,14 +43,14 @@ export function MapChrome({
         <div
           className="bruit-chrome bruit-noise-legend"
           role="img"
-          aria-label={`Noise levels: ${levelSummary}. ${reportCount} reports in the last 7 days.`}
+          aria-label={`Noise levels: ${levelSummary}. ${reportCount} live reports in active areas.`}
         >
           <div className="bruit-noise-legend-header">
             <span className="bruit-noise-legend-title">Levels</span>
             <span className="bruit-noise-legend-meta">
               {reportCount}
               <span className="bruit-noise-legend-meta-sep">·</span>
-              7 days
+              live
             </span>
           </div>
 
@@ -85,16 +86,7 @@ export function MapChrome({
           aria-label="About Bruit"
           title="About"
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.7" />
-            <path
-              d="M12 11v5.5"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="8.2" r="1" fill="currentColor" />
-          </svg>
+          <Info size={19} strokeWidth={1.85} aria-hidden />
         </button>
 
         <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
@@ -104,14 +96,7 @@ export function MapChrome({
             className="bruit-rail-btn-block cursor-pointer"
             aria-label="Zoom in"
           >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M12 6v12M6 12h12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Plus size={19} strokeWidth={2} aria-hidden />
           </button>
           <div className="mx-3 h-px bg-[var(--bruit-hairline)]" />
           <button
@@ -120,14 +105,7 @@ export function MapChrome({
             className="bruit-rail-btn-block cursor-pointer"
             aria-label="Zoom out"
           >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M6 12h12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Minus size={19} strokeWidth={2} aria-hidden />
           </button>
         </div>
 
@@ -139,16 +117,7 @@ export function MapChrome({
           aria-label="Center on my location"
           title="My location"
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
-            <path
-              d="M12 3.5v2.1M12 18.4v2.1M3.5 12h2.1M18.4 12h2.1"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="12" r="7.1" stroke="currentColor" strokeWidth="1.7" />
-          </svg>
+          <LocateFixed size={19} strokeWidth={1.85} aria-hidden />
         </button>
       </div>
     </>

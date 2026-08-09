@@ -1,7 +1,9 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Drawer } from "vaul";
+import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import {
   NOISE_CATEGORIES,
   NOISE_INTENSITIES,
@@ -20,117 +22,6 @@ type ReportDrawerProps = {
     intensity: NoiseIntensity;
   }) => void;
 };
-
-function CategoryIcon({ id }: { id: NoiseCategory }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    "aria-hidden": true as const,
-  };
-
-  switch (id) {
-    case "traffic":
-      return (
-        <svg {...common}>
-          <path
-            d="M5 16h14l-1.2-7.2A2 2 0 0 0 15.84 7H8.16a2 2 0 0 0-1.96 1.8L5 16Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-          <circle cx="7.5" cy="16.5" r="1.5" fill="currentColor" />
-          <circle cx="16.5" cy="16.5" r="1.5" fill="currentColor" />
-        </svg>
-      );
-    case "construction":
-      return (
-        <svg {...common}>
-          <path
-            d="M14 5 8 11l5 5 6-6-2.5-2.5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M4 20h7"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "party":
-      return (
-        <svg {...common}>
-          <path
-            d="M9 18V8.5a3.5 3.5 0 1 1 3.5 3.5H9"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M9 12v6"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "animals":
-      return (
-        <svg {...common}>
-          <path
-            d="M12 13c2.5 0 4.5 1.4 4.5 3.2V18H7.5v-1.8C7.5 14.4 9.5 13 12 13Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-          <circle cx="9" cy="10" r="1.4" fill="currentColor" />
-          <circle cx="15" cy="10" r="1.4" fill="currentColor" />
-          <path
-            d="M8 7.5 6.5 5M16 7.5 17.5 5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "industry":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 20V10l5 3V10l5 3V8h3v12H4Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...common}>
-          <circle
-            cx="12"
-            cy="12"
-            r="7"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          />
-          <path
-            d="M12 9v3.5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <circle cx="12" cy="15.5" r="1" fill="currentColor" />
-        </svg>
-      );
-  }
-}
 
 export function ReportDrawer({
   open,
@@ -189,14 +80,7 @@ export function ReportDrawer({
               className="bruit-icon-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Close"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-                <path
-                  d="M3 3l8 8M11 3 3 11"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <X size={14} strokeWidth={2.2} aria-hidden />
             </button>
           </div>
 
@@ -217,7 +101,7 @@ export function ReportDrawer({
                     }`}
                   >
                     <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-[0.85rem] bg-[var(--bruit-fill)] text-[var(--bruit-ink)]">
-                      <CategoryIcon id={item.id} />
+                      <NoiseCategoryIcon category={item.id} size={22} />
                     </span>
                     <span className="block text-[0.92rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
                       {item.label}
@@ -263,16 +147,7 @@ export function ReportDrawer({
                         aria-hidden
                       >
                         {selected ? (
-                          <svg width="10" height="10" viewBox="0 0 10 10">
-                            <path
-                              d="M2 5.2 4.1 7.2 8 2.8"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.6"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <Check size={12} strokeWidth={2.6} aria-hidden />
                         ) : null}
                       </span>
                     </button>

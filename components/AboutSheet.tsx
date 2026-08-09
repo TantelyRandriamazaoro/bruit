@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -66,14 +67,7 @@ export function AboutSheet({ open, onClose }: AboutSheetProps) {
             className="bruit-icon-btn cursor-pointer"
             aria-label="Close"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-              <path
-                d="M3 3l8 8M11 3 3 11"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
+            <X size={14} strokeWidth={2.2} aria-hidden />
           </button>
         </div>
 
@@ -110,8 +104,8 @@ export function AboutSheet({ open, onClose }: AboutSheetProps) {
         <ul className="mb-4 overflow-hidden rounded-[1rem] bg-[var(--bruit-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           {[
             "Reports stay anonymous to your device ID",
-            "Heatmap shows the last 7 days of activity",
-            "Louder reports weigh hotter on the map",
+            "Live map shows active areas for about 6 hours",
+            "New reports nearby keep an area’s heat lingering",
           ].map((line, index) => (
             <li key={line}>
               {index > 0 ? (
