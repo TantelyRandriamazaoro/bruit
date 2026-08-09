@@ -283,9 +283,8 @@ export function HomeClient() {
     [mapApi],
   );
 
-  const showMapChrome =
-    activeTab === "map" && !aboutOpen && !policeDrawerOpen;
-  const tabHidden = aboutOpen || policeDrawerOpen;
+  const showMapChrome = activeTab === "map" && !policeDrawerOpen;
+  const tabHidden = policeDrawerOpen;
 
   return (
     <div
@@ -334,7 +333,7 @@ export function HomeClient() {
         <HelpContacts userLocation={userLocation} />
       ) : null}
 
-      {activeTab !== "map" && !aboutOpen ? (
+      {activeTab !== "map" ? (
         <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
           <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
             <ThemeToggle />
@@ -412,7 +411,11 @@ export function HomeClient() {
         onClose={() => setSelectedPoliceStation(null)}
       />
 
-      <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <AboutSheet
+        open={aboutOpen}
+        container={shellEl}
+        onClose={() => setAboutOpen(false)}
+      />
     </div>
   );
 }
