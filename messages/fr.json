@@ -1,0 +1,270 @@
+{
+  "Meta": {
+    "title": "Bruit",
+    "description": "Signalez les nuisances sonores et repérez les zones bruyantes autour de vous."
+  },
+  "Common": {
+    "close": "Fermer",
+    "dismiss": "Fermer",
+    "done": "Terminé",
+    "map": "Carte",
+    "search": "Rechercher",
+    "call": "Appeler",
+    "actions": "Actions",
+    "today": "Aujourd’hui",
+    "yesterday": "Hier",
+    "report": "signalement",
+    "reports": "signalements",
+    "day": "jour",
+    "days": "jours",
+    "quiet": "calme",
+    "live": "en direct"
+  },
+  "Tabs": {
+    "primary": "Principal",
+    "map": "Carte",
+    "activity": "Activité",
+    "insights": "Tendances",
+    "help": "Aide",
+    "report": "Signaler",
+    "sending": "Envoi…",
+    "sendingReport": "Envoi du signalement",
+    "reportNoise": "Signaler un bruit",
+    "reportAvailableIn": "Vous pourrez signaler à nouveau dans {time}"
+  },
+  "Categories": {
+    "traffic": {
+      "label": "Circulation",
+      "description": "Voitures, klaxons, motos"
+    },
+    "construction": {
+      "label": "Chantier",
+      "description": "Perceuses, travaux, engins"
+    },
+    "party": {
+      "label": "Musique et fêtes",
+      "description": "Bars, événements, musique forte"
+    },
+    "animals": {
+      "label": "Animaux",
+      "description": "Aboiements, coqs, faune"
+    },
+    "industry": {
+      "label": "Industrie",
+      "description": "Usines, générateurs, climatisation"
+    },
+    "other": {
+      "label": "Autre",
+      "description": "Tout autre bruit gênant"
+    },
+    "fallback": "Bruit"
+  },
+  "Intensities": {
+    "moderate": {
+      "label": "Modéré",
+      "hint": "S’entend nettement",
+      "short": "Modéré"
+    },
+    "loud": {
+      "label": "Fort",
+      "hint": "Gêne la conversation",
+      "short": "Fort"
+    },
+    "very_loud": {
+      "label": "Très fort",
+      "hint": "Très gênant à l’extérieur",
+      "short": "Très fort"
+    },
+    "extreme": {
+      "label": "Extrême",
+      "hint": "Douloureux ou inquiétant",
+      "short": "Extrême"
+    },
+    "fallback": "Fort"
+  },
+  "Report": {
+    "title": "Signaler un bruit",
+    "subtitle": "Quel bruit entendez-vous ?",
+    "type": "Type",
+    "howLoud": "Intensité",
+    "submit": "Envoyer le signalement",
+    "sending": "Envoi…"
+  },
+  "Feed": {
+    "title": "Activité",
+    "subtitle": "Les signalements à proximité · 7 derniers jours",
+    "emptyTitle": "Aucun signalement pour l’instant",
+    "emptyBody": "Les signalements de bruit à proximité apparaîtront ici.",
+    "reportNoise": "Signaler un bruit",
+    "lookingUpArea": "Recherche du lieu…",
+    "reportsCount": "{count, plural, one {# signalement} other {# signalements}}",
+    "showOnMap": "Voir cette zone sur la carte",
+    "showOnMapShort": "Voir sur la carte"
+  },
+  "Insights": {
+    "title": "Tendances",
+    "subtitle": "Sélectionnez une zone pour consulter son activité",
+    "emptyTitle": "Aucune zone à surveiller pour l’instant",
+    "emptyBody": "Lorsqu’un même secteur reçoit plusieurs signalements, il apparaît ici.",
+    "reportNoise": "Signaler un bruit",
+    "thisWeek": "Cette semaine",
+    "hotspot": "zone bruyante",
+    "hotspots": "zones bruyantes",
+    "hotspotsSection": "Zones bruyantes",
+    "recurring": "Récurrentes",
+    "escalating": "En augmentation",
+    "new": "Nouveaux",
+    "footer": "Sélectionnez une zone pour voir les horaires, les sources et le niveau de bruit. Chaque zone couvre environ 120 m.",
+    "thisWeekCount": "{count} cette semaine",
+    "dayCount": "{count, plural, one {# jour} other {# jours}}",
+    "reportsCount": "{count, plural, one {# signalement} other {# signalements}}",
+    "selectedPeriod": "Période sélectionnée",
+    "thisHalfHour": "Cette demi-heure",
+    "allDay": "{count} sur la journée",
+    "noDaySelected": "Aucun jour sélectionné",
+    "mostly": "Surtout {category}",
+    "quietRightNow": "Aucun signalement pour l’instant",
+    "loudestAround": "Plus fort vers {time} ce jour-là",
+    "dayRhythm": "Rythme · {day}",
+    "dayFallback": "Jour",
+    "halfHourAria": "Intensité par demi-heure pour {day}",
+    "slotAria": "{time}, {count, plural, one {# signalement} other {# signalements}}",
+    "tapBar": "Sélectionnez une barre pour afficher cette demi-heure",
+    "sources": "Sources · {day}",
+    "sourcesHalfHour": "Sources · Cette demi-heure",
+    "noReportsDay": "Aucun signalement ce jour-là.",
+    "levels": "Niveaux · {day}",
+    "loudShare": "{percent} des signalements ce jour-là indiquaient un bruit fort ou très fort.",
+    "showOnMap": "Voir sur la carte",
+    "nearCoords": "Près de {lat}°, {lng}°",
+    "sameAsPriorWeek": "Comme la semaine précédente",
+    "upVsPriorWeek": "+{delta} par rapport à la semaine précédente",
+    "downVsPriorWeek": "−{delta} par rapport à la semaine précédente",
+    "upPercentVsPriorWeek": "+{pct} % par rapport à la semaine précédente",
+    "downPercentVsPriorWeek": "−{pct} % par rapport à la semaine précédente",
+    "noPriorWeek": "Pas de données pour la semaine précédente",
+    "status": {
+      "new": "Nouveau",
+      "escalating": "En augmentation",
+      "cooling": "En baisse",
+      "recurring": "Récurrent",
+      "persistent": "Persistant",
+      "active": "Actif"
+    },
+    "trend": {
+      "new": "Apparues cette semaine",
+      "escalating": "En augmentation",
+      "cooling": "En baisse",
+      "recurring": "Récurrents",
+      "persistent": "Persistantes"
+    },
+    "timeSlots": {
+      "0": { "label": "0 h–3 h", "shortLabel": "Nuit" },
+      "1": { "label": "3 h–6 h", "shortLabel": "Tôt" },
+      "2": { "label": "6 h–9 h", "shortLabel": "Matin" },
+      "3": { "label": "9 h–12 h", "shortLabel": "Midi" },
+      "4": { "label": "12 h–15 h", "shortLabel": "Après-midi" },
+      "5": { "label": "15 h–18 h", "shortLabel": "Fin de journée" },
+      "6": { "label": "18 h–21 h", "shortLabel": "Soirée" },
+      "7": { "label": "21 h–0 h", "shortLabel": "Nuit" }
+    },
+    "weekdays": {
+      "0": "Lun",
+      "1": "Mar",
+      "2": "Mer",
+      "3": "Jeu",
+      "4": "Ven",
+      "5": "Sam",
+      "6": "Dim"
+    }
+  },
+  "History": {
+    "chooseDay": "Choisir un jour",
+    "pickTime": "Choisir une heure",
+    "quietHalfHour": "Aucun signalement sur ce créneau",
+    "reportsHalfHour": "{count, plural, one {# signalement} other {# signalements}} sur ce créneau",
+    "thatDay": "{count} ce jour-là",
+    "halfHourHistory": "Historique par demi-heure",
+    "scrubLabel": "Parcourir l’historique par pas de 30 minutes",
+    "slotQuiet": "calme",
+    "slotReports": "{count, plural, one {# signalement} other {# signalements}}",
+    "dayReports": ", {count} signalements",
+    "dayQuiet": ", calme",
+    "rangeReports": "{range}, {count} signalements"
+  },
+  "Help": {
+    "title": "Aide",
+    "subtitleLocated": "Contactez un commissariat à proximité ou recherchez son numéro sur Google.",
+    "subtitleNoLocation": "Activez la localisation pour trouver les commissariats près de vous.",
+    "nearby": "À proximité",
+    "locationOff": "La localisation est désactivée. Activez-la pour trouver les commissariats à proximité.",
+    "noneNearby": "Aucun commissariat trouvé dans un rayon d’environ 40 km. Recherchez un poste local sur Google.",
+    "disclaimer": "Les signalements Bruit sont des informations partagées par la communauté. Ils ne remplacent pas les services d’urgence.",
+    "away": "à {distance}",
+    "searchGoogleAria": "Chercher sur Google le téléphone de {name}, à {distance}",
+    "searchGoogleName": "Chercher {name} sur Google",
+    "callAria": "Appeler {name}, {number}",
+    "phoneQuery": "téléphone"
+  },
+  "Police": {
+    "fallbackTitle": "Commissariat",
+    "station": "Commissariat de police",
+    "phone": "Téléphone",
+    "findAnother": "Rechercher un autre numéro",
+    "phoneNumber": "Numéro de téléphone",
+    "searchGoogle": "Chercher sur Google"
+  },
+  "About": {
+    "title": "À propos de Bruit",
+    "body": "Repérez et signalez les nuisances sonores autour de vous. Un signalement est possible toutes les 30 minutes.",
+    "appearance": "Apparence",
+    "language": "Langue",
+    "auto": "Auto",
+    "light": "Clair",
+    "dark": "Sombre",
+    "english": "English",
+    "french": "Français",
+    "bulletAnonymous": "Vos signalements restent anonymes grâce à l’identifiant de votre appareil",
+    "bulletLiveMap": "La carte affiche les zones actives pendant environ six heures",
+    "bulletLingering": "De nouveaux signalements à proximité maintiennent une zone active"
+  },
+  "Map": {
+    "loading": "Chargement de la carte…",
+    "failed": "Échec du chargement de la carte.",
+    "aria": "Carte des nuisances sonores",
+    "levels": "Niveaux",
+    "legendAria": "Niveaux de bruit : {levels}. {count} signalements récents dans les zones actives.",
+    "about": "À propos de Bruit",
+    "aboutShort": "À propos",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "locate": "Centrer sur ma position",
+    "myLocation": "Ma position"
+  },
+  "Theme": {
+    "toLight": "Passer en mode clair",
+    "toDark": "Passer en mode sombre",
+    "light": "Mode clair",
+    "dark": "Mode sombre"
+  },
+  "Status": {
+    "missingEnv": "Ajoutez les clés Supabase de Bruit dans .env.local pour envoyer un signalement.",
+    "missingEnvBanner": "Configuration Supabase incomplète. Copiez .env.example dans .env.local, puis ajoutez l’URL et la clé publique de votre projet Bruit.",
+    "loadError": "Impossible de charger les signalements. Vérifiez votre projet Supabase et ses migrations.",
+    "geoUnsupported": "La géolocalisation n’est pas prise en charge dans ce navigateur.",
+    "locationOff": "La localisation est désactivée. Activez-la dans les réglages de votre navigateur pour envoyer un signalement.",
+    "locationUnavailable": "Impossible d’obtenir votre position pour le moment.",
+    "locationRetry": "Impossible d’obtenir votre position. Réessayez.",
+    "allowLocation": "Autorisez la localisation pour signaler un bruit.",
+    "rateLimited": "Vous pourrez signaler à nouveau dans {minutes} min.",
+    "submitFailed": "Impossible d’envoyer ce signalement. Réessayez.",
+    "reported": "Signalement envoyé. Merci.",
+    "networkError": "Une erreur réseau est survenue lors de l’envoi. Réessayez."
+  },
+  "Time": {
+    "justNow": "À l’instant",
+    "minutesAgo": "il y a {count} min",
+    "hoursAgo": "il y a {count} h",
+    "daysAgo": "il y a {count} j"
+  }
+}

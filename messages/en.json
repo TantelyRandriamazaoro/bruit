@@ -1,0 +1,270 @@
+{
+  "Meta": {
+    "title": "Bruit",
+    "description": "Report noise nuisance and spot noisy areas around you."
+  },
+  "Common": {
+    "close": "Close",
+    "dismiss": "Dismiss",
+    "done": "Done",
+    "map": "Map",
+    "search": "Search",
+    "call": "Call",
+    "actions": "Actions",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "report": "report",
+    "reports": "reports",
+    "day": "day",
+    "days": "days",
+    "quiet": "quiet",
+    "live": "live"
+  },
+  "Tabs": {
+    "primary": "Primary",
+    "map": "Map",
+    "activity": "Activity",
+    "insights": "Trends",
+    "help": "Help",
+    "report": "Report",
+    "sending": "Sending…",
+    "sendingReport": "Sending report",
+    "reportNoise": "Report a noise",
+    "reportAvailableIn": "You can report again in {time}"
+  },
+  "Categories": {
+    "traffic": {
+      "label": "Traffic",
+      "description": "Cars, horns, motorbikes"
+    },
+    "construction": {
+      "label": "Construction",
+      "description": "Drills, worksites, machinery"
+    },
+    "party": {
+      "label": "Music & parties",
+      "description": "Bars, events, loud music"
+    },
+    "animals": {
+      "label": "Animals",
+      "description": "Barking, roosters, wildlife"
+    },
+    "industry": {
+      "label": "Industry",
+      "description": "Factories, generators, air conditioning"
+    },
+    "other": {
+      "label": "Other",
+      "description": "Any other disruptive noise"
+    },
+    "fallback": "Noise"
+  },
+  "Intensities": {
+    "moderate": {
+      "label": "Moderate",
+      "hint": "Clearly noticeable",
+      "short": "Moderate"
+    },
+    "loud": {
+      "label": "Loud",
+      "hint": "Disrupts conversation",
+      "short": "Loud"
+    },
+    "very_loud": {
+      "label": "Very loud",
+      "hint": "Very uncomfortable outdoors",
+      "short": "Very"
+    },
+    "extreme": {
+      "label": "Extreme",
+      "hint": "Painful or alarming",
+      "short": "Extreme"
+    },
+    "fallback": "Loud"
+  },
+  "Report": {
+    "title": "Report a noise",
+    "subtitle": "What can you hear?",
+    "type": "Type",
+    "howLoud": "How Loud",
+    "submit": "Submit report",
+    "sending": "Sending…"
+  },
+  "Feed": {
+    "title": "Activity",
+    "subtitle": "Nearby reports · last 7 days",
+    "emptyTitle": "No reports yet",
+    "emptyBody": "Noise reports near you will appear here.",
+    "reportNoise": "Report Noise",
+    "lookingUpArea": "Finding location…",
+    "reportsCount": "{count, plural, one {# report} other {# reports}}",
+    "showOnMap": "Show this area on the map",
+    "showOnMapShort": "Show on map"
+  },
+  "Insights": {
+    "title": "Trends",
+    "subtitle": "Select an area to explore its activity",
+    "emptyTitle": "No areas to watch yet",
+    "emptyBody": "An area appears here when it receives several nearby reports.",
+    "reportNoise": "Report Noise",
+    "thisWeek": "This Week",
+    "hotspot": "noisy area",
+    "hotspots": "noisy areas",
+    "hotspotsSection": "Noisy areas",
+    "recurring": "Recurring",
+    "escalating": "Escalating",
+    "new": "New",
+    "footer": "Select an area to see when noise occurs, what causes it, and how intense it is. Each area covers about 120 m.",
+    "thisWeekCount": "{count} this week",
+    "dayCount": "{count, plural, one {# day} other {# days}}",
+    "reportsCount": "{count, plural, one {# report} other {# reports}}",
+    "selectedPeriod": "Selected period",
+    "thisHalfHour": "This Half-Hour",
+    "allDay": "{count} all day",
+    "noDaySelected": "No day selected",
+    "mostly": "Mostly {category}",
+    "quietRightNow": "No reports right now",
+    "loudestAround": "Loudest around {time} that day",
+    "dayRhythm": "{day} Rhythm",
+    "dayFallback": "Day",
+    "halfHourAria": "Half-hour intensity for {day}",
+    "slotAria": "{time}, {count, plural, one {# report} other {# reports}}",
+    "tapBar": "Select a bar to view that half-hour",
+    "sources": "Sources · {day}",
+    "sourcesHalfHour": "Sources · This Half-Hour",
+    "noReportsDay": "No reports on this day yet.",
+    "levels": "Levels · {day}",
+    "loudShare": "{percent} of reports that day described the noise as loud or very loud.",
+    "showOnMap": "Show on Map",
+    "nearCoords": "Near {lat}°, {lng}°",
+    "sameAsPriorWeek": "Same as last week",
+    "upVsPriorWeek": "+{delta} compared with last week",
+    "downVsPriorWeek": "−{delta} compared with last week",
+    "upPercentVsPriorWeek": "+{pct}% compared with last week",
+    "downPercentVsPriorWeek": "−{pct}% compared with last week",
+    "noPriorWeek": "No data from last week",
+    "status": {
+      "new": "New",
+      "escalating": "Escalating",
+      "cooling": "Cooling",
+      "recurring": "Recurring",
+      "persistent": "Persistent",
+      "active": "Active"
+    },
+    "trend": {
+      "new": "New this week",
+      "escalating": "Escalating",
+      "cooling": "Cooling off",
+      "recurring": "Recurring",
+      "persistent": "Persistent"
+    },
+    "timeSlots": {
+      "0": { "label": "12–3 AM", "shortLabel": "Night" },
+      "1": { "label": "3–6 AM", "shortLabel": "Early" },
+      "2": { "label": "6–9 AM", "shortLabel": "Morning" },
+      "3": { "label": "9–12 PM", "shortLabel": "Midday" },
+      "4": { "label": "12–3 PM", "shortLabel": "Afternoon" },
+      "5": { "label": "3–6 PM", "shortLabel": "Late day" },
+      "6": { "label": "6–9 PM", "shortLabel": "Evening" },
+      "7": { "label": "9–12 AM", "shortLabel": "Night" }
+    },
+    "weekdays": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri",
+      "5": "Sat",
+      "6": "Sun"
+    }
+  },
+  "History": {
+    "chooseDay": "Choose a day",
+    "pickTime": "Pick a time",
+    "quietHalfHour": "No reports in this time slot",
+    "reportsHalfHour": "{count, plural, one {# report} other {# reports}} in this time slot",
+    "thatDay": "{count} that day",
+    "halfHourHistory": "Half-hour history",
+    "scrubLabel": "Scrub history in 30-minute steps",
+    "slotQuiet": "quiet",
+    "slotReports": "{count, plural, one {# report} other {# reports}}",
+    "dayReports": ", {count} reports",
+    "dayQuiet": ", quiet",
+    "rangeReports": "{range}, {count} reports"
+  },
+  "Help": {
+    "title": "Help",
+    "subtitleLocated": "Contact a nearby police station or look up its number on Google.",
+    "subtitleNoLocation": "Turn on location to find police stations near you.",
+    "nearby": "Nearby",
+    "locationOff": "Location is turned off. Turn it on to find nearby police stations.",
+    "noneNearby": "No police stations found within about 40 km. Search Google for a local station.",
+    "disclaimer": "Bruit reports are shared by the community. They do not replace emergency services.",
+    "away": "{distance} away",
+    "searchGoogleAria": "Search Google for {name} phone number, {distance} away",
+    "searchGoogleName": "Search Google for {name}",
+    "callAria": "Call {name}, {number}",
+    "phoneQuery": "phone"
+  },
+  "Police": {
+    "fallbackTitle": "Police station",
+    "station": "Police station",
+    "phone": "Phone",
+    "findAnother": "Look up another number",
+    "phoneNumber": "Phone number",
+    "searchGoogle": "Search on Google"
+  },
+  "About": {
+    "title": "About Bruit",
+    "body": "Find and report noise nuisance around you. You can send one report every 30 minutes.",
+    "appearance": "Appearance",
+    "language": "Language",
+    "auto": "Auto",
+    "light": "Light",
+    "dark": "Dark",
+    "english": "English",
+    "french": "Français",
+    "bulletAnonymous": "Your reports remain anonymous through your device ID",
+    "bulletLiveMap": "The map shows active areas for about six hours",
+    "bulletLingering": "New nearby reports keep an area active"
+  },
+  "Map": {
+    "loading": "Loading map…",
+    "failed": "Map failed to load.",
+    "aria": "Noise nuisance map",
+    "levels": "Levels",
+    "legendAria": "Noise levels: {levels}. {count} recent reports in active areas.",
+    "about": "About Bruit",
+    "aboutShort": "About",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "locate": "Center on my location",
+    "myLocation": "My location"
+  },
+  "Theme": {
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode",
+    "light": "Light mode",
+    "dark": "Dark mode"
+  },
+  "Status": {
+    "missingEnv": "Add your Bruit Supabase keys to .env.local to send reports.",
+    "missingEnvBanner": "Supabase is not fully configured. Copy .env.example to .env.local, then add your Bruit project URL and publishable key.",
+    "loadError": "Could not load reports. Check your Supabase project and migrations.",
+    "geoUnsupported": "Geolocation is not supported in this browser.",
+    "locationOff": "Location access is turned off. Enable it in your browser settings to send a report.",
+    "locationUnavailable": "Could not get your location right now.",
+    "locationRetry": "Could not get your location. Try again.",
+    "allowLocation": "Allow location access to report noise.",
+    "rateLimited": "You can report again in {minutes} min.",
+    "submitFailed": "Could not submit that report. Try again.",
+    "reported": "Report sent. Thank you.",
+    "networkError": "A network error occurred while sending your report. Try again."
+  },
+  "Time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  }
+}
