@@ -43,6 +43,7 @@ In the Supabase SQL editor for the Bruit project, run in order:
 
 1. [`supabase/migrations/0001_noise_reports.sql`](supabase/migrations/0001_noise_reports.sql)
 2. [`supabase/migrations/0002_report_details.sql`](supabase/migrations/0002_report_details.sql)
+3. [`supabase/migrations/0003_area_labels.sql`](supabase/migrations/0003_area_labels.sql)
 
 Or with the CLI linked to the Bruit project:
 

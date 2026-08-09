@@ -9,6 +9,15 @@ export type NoiseReport = {
   created_at: string;
 };
 
+export type AreaLabel = {
+  cell_key: string;
+  lat: number;
+  lng: number;
+  name: string;
+  source: string;
+  created_at: string;
+};
+
 export type CreateNoiseReportSuccess = {
   ok: true;
   report: NoiseReport;
@@ -59,6 +68,26 @@ export type Database = {
           lng?: number;
           category?: string;
           intensity?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      area_labels: {
+        Row: AreaLabel;
+        Insert: {
+          cell_key: string;
+          lat: number;
+          lng: number;
+          name: string;
+          source?: string;
+          created_at?: string;
+        };
+        Update: {
+          cell_key?: string;
+          lat?: number;
+          lng?: number;
+          name?: string;
+          source?: string;
           created_at?: string;
         };
         Relationships: [];
