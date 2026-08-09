@@ -73,8 +73,8 @@ export function MapChrome({
       </div>
 
       {/* Right rail above tab bar */}
-      <div className="pointer-events-none absolute right-3.5 z-20 flex flex-col items-end gap-2 bottom-[calc(var(--bruit-tabbar-space)+0.85rem)]">
-        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[0.95rem]">
+      <div className="pointer-events-none absolute right-3.5 z-20 flex flex-col items-end gap-2.5 bottom-[calc(var(--bruit-tabbar-space)+0.85rem)]">
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <ThemeToggle />
         </div>
 
@@ -85,7 +85,7 @@ export function MapChrome({
           aria-label="About Bruit"
           title="About"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.7" />
             <path
               d="M12 11v5.5"
@@ -97,14 +97,14 @@ export function MapChrome({
           </svg>
         </button>
 
-        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[0.95rem]">
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <button
             type="button"
             onClick={onZoomIn}
             className="bruit-rail-btn-block cursor-pointer"
             aria-label="Zoom in"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M12 6v12M6 12h12"
                 stroke="currentColor"
@@ -113,14 +113,14 @@ export function MapChrome({
               />
             </svg>
           </button>
-          <div className="mx-2.5 h-px bg-[var(--bruit-hairline)]" />
+          <div className="mx-3 h-px bg-[var(--bruit-hairline)]" />
           <button
             type="button"
             onClick={onZoomOut}
             className="bruit-rail-btn-block cursor-pointer"
             aria-label="Zoom out"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M6 12h12"
                 stroke="currentColor"
@@ -139,7 +139,7 @@ export function MapChrome({
           aria-label="Center on my location"
           title="My location"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
             <path
               d="M12 3.5v2.1M12 18.4v2.1M3.5 12h2.1M18.4 12h2.1"
