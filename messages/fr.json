@@ -235,14 +235,14 @@
     "bulletLingering": "De nouveaux signalements à proximité maintiennent une zone active"
   },
   "Welcome": {
-    "title": "Signalez le bruit à proximité",
-    "subtitle": "Partagez les nuisances sonores autour de vous et voyez où elles se produisent.",
-    "featureReportTitle": "Partagez ce que vous entendez",
-    "featureReportBody": "Enregistrez un bruit à proximité avec Signaler. Un signalement toutes les 30 minutes.",
-    "featureAuthoritiesTitle": "Appelez les autorités",
-    "featureAuthoritiesBody": "Trouvez les commissariats à proximité dans Aide et appelez si vous avez besoin d’aide.",
-    "featureAnonymousTitle": "Restez anonyme",
-    "featureAnonymousBody": "Les signalements utilisent un identifiant d’appareil privé, jamais votre nom.",
+    "title": "Signalez les nuisances sonores",
+    "subtitle": "Partagez les bruits gênants autour de vous et repérez où ils se produisent.",
+    "featureReportTitle": "Signalez un bruit",
+    "featureReportBody": "Touchez Signaler pour partager un bruit à proximité. Un signalement toutes les 30 minutes.",
+    "featureAuthoritiesTitle": "Contactez les autorités",
+    "featureAuthoritiesBody": "Retrouvez les commissariats à proximité dans l’onglet Aide.",
+    "featureAnonymousTitle": "Préservez votre anonymat",
+    "featureAnonymousBody": "Vos signalements ne contiennent ni votre nom ni votre compte.",
     "continue": "Continuer"
   },
   "Map": {
