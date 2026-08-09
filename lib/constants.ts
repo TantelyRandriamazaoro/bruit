@@ -1,5 +1,7 @@
 export const COOLDOWN_MS = 30 * 60 * 1000;
 export const HEATMAP_DAYS = 7;
+/** Two windows of HEATMAP_DAYS for municipal week-over-week Insights */
+export const INSIGHTS_DAYS = HEATMAP_DAYS * 2;
 export const DEVICE_ID_KEY = "bruit_device_id";
 export const LAST_REPORT_AT_KEY = "bruit_last_report_at";
 

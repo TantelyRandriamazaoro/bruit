@@ -1,4 +1,4 @@
-import { HEATMAP_DAYS } from "@/lib/constants";
+import { HEATMAP_DAYS, INSIGHTS_DAYS } from "@/lib/constants";
 import type { NoiseCategory, NoiseIntensity } from "@/lib/noise-meta";
 import { getSupabase } from "@/lib/supabase/client";
 import type {
@@ -6,9 +6,11 @@ import type {
   NoiseReport,
 } from "@/lib/supabase/types";
 
-export async function fetchRecentReports(): Promise<NoiseReport[]> {
+export async function fetchRecentReports(
+  days: number = INSIGHTS_DAYS,
+): Promise<NoiseReport[]> {
   const since = new Date();
-  since.setDate(since.getDate() - HEATMAP_DAYS);
+  since.setDate(since.getDate() - days);
 
   const { data, error } = await getSupabase()
     .from("noise_reports")
@@ -32,6 +34,18 @@ export async function fetchRecentReports(): Promise<NoiseReport[]> {
   }
 
   return data ?? [];
+}
+
+export function filterReportsSince(
+  reports: NoiseReport[],
+  days: number = HEATMAP_DAYS,
+  now = Date.now(),
+): NoiseReport[] {
+  const cutoff = now - days * 24 * 60 * 60 * 1000;
+  return reports.filter((report) => {
+    const created = new Date(report.created_at).getTime();
+    return Number.isFinite(created) && created >= cutoff;
+  });
 }
 
 export async function createNoiseReport(params: {
