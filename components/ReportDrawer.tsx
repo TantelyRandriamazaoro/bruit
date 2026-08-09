@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { Drawer } from "vaul";
 import {
   NOISE_CATEGORIES,
   NOISE_INTENSITIES,
@@ -11,6 +12,8 @@ import {
 type ReportDrawerProps = {
   open: boolean;
   busy?: boolean;
+  /** Keep drawer inside the app shell so the tab bar stays above the sheet. */
+  container?: HTMLElement | null;
   onClose: () => void;
   onSubmit: (details: {
     category: NoiseCategory;
@@ -132,184 +135,165 @@ function CategoryIcon({ id }: { id: NoiseCategory }) {
 export function ReportDrawer({
   open,
   busy = false,
+  container = null,
   onClose,
   onSubmit,
 }: ReportDrawerProps) {
   const titleId = useId();
-  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const descriptionId = useId();
   const [category, setCategory] = useState<NoiseCategory>("traffic");
   const [intensity, setIntensity] = useState<NoiseIntensity>("loud");
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    sheetRef.current?.focus();
-
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
-
   return (
-    <div className="absolute inset-0 z-40 flex items-end justify-center">
-      <button
-        type="button"
-        aria-label="Dismiss"
-        className="bruit-scrim absolute inset-0 cursor-pointer border-0"
-        onClick={onClose}
-      />
+    <Drawer.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          onClose();
+        }
+      }}
+      dismissible={!busy}
+      shouldScaleBackground={false}
+      repositionInputs
+      container={container ?? undefined}
+      autoFocus
+    >
+      <Drawer.Portal>
+        <Drawer.Overlay className="bruit-drawer-overlay fixed inset-x-0 top-0 z-40 bottom-[var(--bruit-tabbar-space)]" />
+        <Drawer.Content
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          className="bruit-sheet bruit-drawer-content fixed inset-x-0 z-40 mx-auto flex h-[calc(100dvh-var(--bruit-tabbar-space))] max-h-[calc(100dvh-var(--bruit-tabbar-space))] w-full max-w-lg flex-col outline-none bottom-[var(--bruit-tabbar-space)] focus:outline-none"
+        >
+          <Drawer.Handle className="bruit-drawer-handle mx-auto mt-2.5 mb-1" />
 
-      <div
-        ref={sheetRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="bruit-sheet relative z-10 flex max-h-[min(82dvh,40rem)] w-full max-w-lg flex-col outline-none animate-[bruit-sheet-in_320ms_cubic-bezier(0.32,0.72,0,1)]"
-      >
-        <div className="flex justify-center pt-2.5 pb-1">
-          <span className="h-1 w-10 rounded-full bg-[var(--bruit-hairline)]" />
-        </div>
-
-        <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-1">
-          <div>
-            <h2
-              id={titleId}
-              className="bruit-brand text-[1.35rem] font-semibold tracking-tight text-[var(--bruit-ink)]"
+          <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-1">
+            <div>
+              <Drawer.Title
+                id={titleId}
+                className="bruit-brand text-[1.35rem] font-semibold tracking-tight text-[var(--bruit-ink)]"
+              >
+                Report a noise
+              </Drawer.Title>
+              <Drawer.Description
+                id={descriptionId}
+                className="mt-0.5 text-[0.84rem] font-medium text-[var(--bruit-muted)]"
+              >
+                Tell us what you’re hearing
+              </Drawer.Description>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              className="bruit-icon-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Close"
             >
-              Report a noise
-            </h2>
-            <p className="mt-0.5 text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-              Tell us what you’re hearing
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+                <path
+                  d="M3 3l8 8M11 3 3 11"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-3">
+            <p className="mb-2 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
+              Type
             </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="bruit-icon-btn cursor-pointer"
-            aria-label="Close"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-              <path
-                d="M3 3l8 8M11 3 3 11"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-3">
-          <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]">
-            Type
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {NOISE_CATEGORIES.map((item) => {
-              const selected = category === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setCategory(item.id)}
-                  className={`bruit-choice cursor-pointer text-left transition-colors duration-200 ${
-                    selected ? "bruit-choice-selected" : ""
-                  }`}
-                >
-                  <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--bruit-fill)] text-[var(--bruit-ink)]">
-                    <CategoryIcon id={item.id} />
-                  </span>
-                  <span className="block text-[0.92rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                    {item.label}
-                  </span>
-                  <span className="mt-0.5 block text-[0.72rem] font-medium leading-snug text-[var(--bruit-muted)]">
-                    {item.description}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <p className="mb-2 mt-5 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]">
-            How loud
-          </p>
-          <div className="flex flex-col gap-1.5 rounded-2xl bg-[var(--bruit-fill)] p-1.5">
-            {NOISE_INTENSITIES.map((item) => {
-              const selected = intensity === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setIntensity(item.id)}
-                  className={`flex cursor-pointer items-center justify-between rounded-[0.9rem] px-3.5 py-2.5 text-left transition-colors duration-200 ${
-                    selected
-                      ? "bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <span>
-                    <span className="block text-[0.92rem] font-semibold text-[var(--bruit-ink)]">
+            <div className="grid grid-cols-2 gap-2">
+              {NOISE_CATEGORIES.map((item) => {
+                const selected = category === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setCategory(item.id)}
+                    className={`bruit-choice cursor-pointer text-left transition-colors duration-200 ${
+                      selected ? "bruit-choice-selected" : ""
+                    }`}
+                  >
+                    <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-[0.85rem] bg-[var(--bruit-fill)] text-[var(--bruit-ink)]">
+                      <CategoryIcon id={item.id} />
+                    </span>
+                    <span className="block text-[0.92rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
                       {item.label}
                     </span>
-                    <span className="block text-[0.72rem] font-medium text-[var(--bruit-muted)]">
-                      {item.hint}
+                    <span className="mt-0.5 block text-[0.72rem] font-medium leading-snug text-[var(--bruit-muted)]">
+                      {item.description}
                     </span>
-                  </span>
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
-                      selected
-                        ? "border-[var(--bruit-accent)] bg-[var(--bruit-accent)] text-white"
-                        : "border-[var(--bruit-hairline-strong)]"
-                    }`}
-                    aria-hidden
-                  >
-                    {selected ? (
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <path
-                          d="M2 5.2 4.1 7.2 8 2.8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    ) : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  </button>
+                );
+              })}
+            </div>
 
-        <div className="border-t border-[var(--bruit-hairline)] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onSubmit({ category, intensity })}
-            className="bruit-primary-btn w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {busy ? "Sending…" : "Submit report"}
-          </button>
-        </div>
-      </div>
-    </div>
+            <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
+              How Loud
+            </p>
+            <div className="overflow-hidden rounded-[1rem] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              {NOISE_INTENSITIES.map((item, index) => {
+                const selected = intensity === item.id;
+                return (
+                  <div key={item.id}>
+                    {index > 0 ? (
+                      <div className="ml-4 h-px bg-[var(--bruit-hairline)]" />
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setIntensity(item.id)}
+                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors duration-150 hover:bg-black/[0.03]"
+                    >
+                      <span>
+                        <span className="block text-[0.98rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
+                          {item.label}
+                        </span>
+                        <span className="block text-[0.78rem] font-medium text-[var(--bruit-muted)]">
+                          {item.hint}
+                        </span>
+                      </span>
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
+                          selected
+                            ? "border-[var(--bruit-accent)] bg-[var(--bruit-accent)] text-white"
+                            : "border-[var(--bruit-hairline-strong)]"
+                        }`}
+                        aria-hidden
+                      >
+                        {selected ? (
+                          <svg width="10" height="10" viewBox="0 0 10 10">
+                            <path
+                              d="M2 5.2 4.1 7.2 8 2.8"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : null}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--bruit-hairline)] px-5 pb-4 pt-3">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onSubmit({ category, intensity })}
+              className="bruit-primary-btn w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? "Sending…" : "Submit report"}
+            </button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 }

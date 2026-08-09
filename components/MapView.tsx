@@ -31,6 +31,8 @@ export type MapApi = {
   zoomIn: () => void;
   zoomOut: () => void;
   locate: () => void;
+  flyTo: (lng: number, lat: number, zoom?: number) => void;
+  resize: () => void;
 };
 
 type MapViewProps = {
@@ -180,6 +182,16 @@ export function MapView({
           duration: 700,
         });
       },
+      flyTo: (lng, lat, zoom = 15) => {
+        map.easeTo({
+          center: [lng, lat],
+          zoom,
+          duration: 750,
+        });
+      },
+      resize: () => {
+        map.resize();
+      },
     });
 
     return () => {
@@ -270,7 +282,7 @@ export function MapView({
         aria-label="Noise pollution map"
       />
       {mapError ? (
-        <div className="bruit-chrome absolute inset-x-4 top-[7.5rem] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-danger)]">
+        <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-danger)]">
           {mapError}
         </div>
       ) : null}

@@ -58,21 +58,19 @@ export function AboutSheet({ open, onClose }: AboutSheetProps) {
           </button>
         </div>
 
-        <ul className="mb-4 space-y-2">
+        <ul className="mb-4 overflow-hidden rounded-[1rem] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           {[
             "Reports stay anonymous to your device ID",
             "Heatmap shows the last 7 days of activity",
             "Louder reports weigh hotter on the map",
-          ].map((line) => (
-            <li
-              key={line}
-              className="flex items-start gap-2.5 rounded-2xl bg-[var(--bruit-fill)] px-3.5 py-3 text-[0.86rem] font-medium text-[var(--bruit-ink)]"
-            >
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bruit-accent)]"
-                aria-hidden
-              />
-              {line}
+          ].map((line, index) => (
+            <li key={line}>
+              {index > 0 ? (
+                <div className="ml-4 h-px bg-[var(--bruit-hairline)]" />
+              ) : null}
+              <div className="px-4 py-3 text-[0.9rem] font-medium leading-snug text-[var(--bruit-ink)]">
+                {line}
+              </div>
             </li>
           ))}
         </ul>
