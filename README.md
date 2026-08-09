@@ -10,7 +10,7 @@ Map app for reporting loud noise and viewing a noise-pollution heatmap.
 
 ## Features
 
-- Full-bleed map with heatmap of recent reports (last 7 days)
+- Full-bleed live heatmap (areas stay active ~6h; Insights keep 7-day trends)
 - Apple Maps–style light basemap (Carto Positron) and frosted chrome
 - Report drawer for **type** + **how loud** before submitting
 - One report every **30 minutes** per device (`localStorage` device ID)

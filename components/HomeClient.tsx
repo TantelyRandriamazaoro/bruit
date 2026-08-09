@@ -1,17 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AboutSheet } from "@/components/AboutSheet";
 import { HelpContacts } from "@/components/HelpContacts";
 import { InsightsView } from "@/components/InsightsView";
 import { MapChrome } from "@/components/MapChrome";
+import { PoliceStationDrawer } from "@/components/PoliceStationDrawer";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
 import { TabBar, type AppTab } from "@/components/TabBar";
@@ -24,6 +19,8 @@ import {
 } from "@/lib/cooldown";
 import { getDeviceId } from "@/lib/device-id";
 import type { NoiseCategory, NoiseIntensity } from "@/lib/noise-meta";
+import { filterLiveMapReports } from "@/lib/live-map";
+import type { SelectedPoliceStation } from "@/lib/police-stations";
 import {
   createNoiseReport,
   fetchRecentReports,
@@ -51,24 +48,11 @@ type Status = {
   tone: "neutral" | "success" | "error";
 } | null;
 
-function subscribeNoop() {
-  return () => {};
-}
-
-function getConfiguredSnapshot() {
-  return isSupabaseConfigured();
-}
-
-function getConfiguredServerSnapshot() {
-  return false;
-}
+// NEXT_PUBLIC_* is inlined at build time on both server and client, so this is
+// stable across SSR and hydration (no flash of the missing-env banner).
+const configured = isSupabaseConfigured();
 
 export function HomeClient() {
-  const configured = useSyncExternalStore(
-    subscribeNoop,
-    getConfiguredSnapshot,
-    getConfiguredServerSnapshot,
-  );
   const [reports, setReports] = useState<NoiseReport[]>([]);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -78,6 +62,8 @@ export function HomeClient() {
   const [busy, setBusy] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [selectedPoliceStation, setSelectedPoliceStation] =
+    useState<SelectedPoliceStation | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("map");
   const [mapApi, setMapApi] = useState<MapApi | null>(null);
   const [cooldownMs, setCooldownMs] = useState(0);
@@ -85,6 +71,8 @@ export function HomeClient() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [shellEl, setShellEl] = useState<HTMLDivElement | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const policeDrawerOpen = selectedPoliceStation !== null;
 
   const refreshReports = useCallback(async () => {
     if (!configured) {
@@ -109,6 +97,13 @@ export function HomeClient() {
       setHydrated(true);
     });
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60_000);
+    return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -187,6 +182,7 @@ export function HomeClient() {
     }
 
     setStatus(null);
+    setSelectedPoliceStation(null);
     setDrawerOpen(true);
   };
 
@@ -278,6 +274,11 @@ export function HomeClient() {
     [reports],
   );
 
+  const liveMapReports = useMemo(
+    () => filterLiveMapReports(reports, now),
+    [reports, now],
+  );
+
   const openHotspotOnMap = useCallback(
     (hotspot: { lat: number; lng: number }) => {
       setActiveTab("map");
@@ -289,8 +290,9 @@ export function HomeClient() {
     [mapApi],
   );
 
-  const showMapChrome = activeTab === "map" && !aboutOpen;
-  const tabHidden = aboutOpen;
+  const showMapChrome =
+    activeTab === "map" && !aboutOpen && !policeDrawerOpen;
+  const tabHidden = aboutOpen || policeDrawerOpen;
 
   return (
     <div
@@ -304,9 +306,14 @@ export function HomeClient() {
         aria-hidden={activeTab !== "map"}
       >
         <MapView
-          reports={recentReports}
+          reports={liveMapReports}
           userLocation={userLocation}
           onMapApi={setMapApi}
+          onSelectPoliceStation={(station) => {
+            setDrawerOpen(false);
+            setAboutOpen(false);
+            setSelectedPoliceStation(station);
+          }}
         />
       </div>
 
@@ -330,7 +337,9 @@ export function HomeClient() {
         />
       ) : null}
 
-      {activeTab === "help" ? <HelpContacts /> : null}
+      {activeTab === "help" ? (
+        <HelpContacts userLocation={userLocation} />
+      ) : null}
 
       {activeTab !== "map" && !aboutOpen ? (
         <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
@@ -341,7 +350,7 @@ export function HomeClient() {
       ) : null}
 
       <MapChrome
-        reportCount={recentReports.length}
+        reportCount={liveMapReports.length}
         canLocate={Boolean(userLocation)}
         hidden={!showMapChrome}
         onLocate={() => mapApi?.locate()}
@@ -350,7 +359,7 @@ export function HomeClient() {
         onOpenAbout={() => setAboutOpen(true)}
       />
 
-      {!configured && activeTab === "map" && !drawerOpen ? (
+      {!configured && activeTab === "map" && !drawerOpen && !policeDrawerOpen ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-ink)]">
           Missing Supabase env. Copy{" "}
           <code className="font-mono text-xs">.env.example</code> to{" "}
@@ -359,13 +368,21 @@ export function HomeClient() {
         </div>
       ) : null}
 
-      {configured && loadError && activeTab === "map" && !drawerOpen ? (
+      {configured &&
+      loadError &&
+      activeTab === "map" &&
+      !drawerOpen &&
+      !policeDrawerOpen ? (
         <div className="bruit-chrome absolute inset-x-4 top-[max(7rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 mx-auto max-w-md rounded-2xl px-4 py-3 text-center text-sm text-[var(--bruit-danger)]">
           {loadError}
         </div>
       ) : null}
 
-      {locationError && !status && showMapChrome && !drawerOpen ? (
+      {locationError &&
+      !status &&
+      showMapChrome &&
+      !drawerOpen &&
+      !policeDrawerOpen ? (
         <div className="pointer-events-none absolute inset-x-4 z-20 mx-auto max-w-sm bottom-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+0.75rem)]">
           <div className="bruit-chrome rounded-2xl px-4 py-2.5 text-center text-sm text-[var(--bruit-muted)]">
             {locationError}
@@ -381,7 +398,9 @@ export function HomeClient() {
         busy={busy && !drawerOpen}
         hidden={tabHidden}
         feedCount={recentReports.length}
-        statusMessage={drawerOpen ? null : (status?.message ?? null)}
+        statusMessage={
+          drawerOpen || policeDrawerOpen ? null : (status?.message ?? null)
+        }
         statusTone={status?.tone ?? "neutral"}
       />
 
@@ -395,6 +414,12 @@ export function HomeClient() {
           }
         }}
         onSubmit={(details) => void submitReport(details)}
+      />
+
+      <PoliceStationDrawer
+        station={selectedPoliceStation}
+        container={shellEl}
+        onClose={() => setSelectedPoliceStation(null)}
       />
 
       <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />

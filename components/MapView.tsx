@@ -8,6 +8,7 @@ import {
   setWorkerUrl,
   type GeoJSONSource,
   type Map,
+  type MapLayerMouseEvent,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -16,7 +17,16 @@ import {
   mapStyleForTheme,
 } from "@/lib/constants";
 import { softenDarkBasemapRoads } from "@/lib/map-style";
-import { intensityWeight } from "@/lib/noise-meta";
+import { liveMapWeight } from "@/lib/live-map";
+import {
+  createLucideMarkerIcon,
+  PHONE_MARKER_COLORS,
+} from "@/lib/lucide-marker";
+import { PHONE_ICON_NODE } from "@/lib/lucide-phone-node";
+import {
+  policeStationsToGeoJSON,
+  type SelectedPoliceStation,
+} from "@/lib/police-stations";
 import type { NoiseReport } from "@/lib/supabase/types";
 
 let workerConfigured = false;
@@ -42,9 +52,13 @@ type MapViewProps = {
   userLocation: { lat: number; lng: number } | null;
   heatmapVisible?: boolean;
   onMapApi?: (api: MapApi) => void;
+  onSelectPoliceStation?: (station: SelectedPoliceStation) => void;
 };
 
-function reportsToGeoJSON(reports: NoiseReport[]): GeoJSON.FeatureCollection {
+function reportsToGeoJSON(
+  reports: NoiseReport[],
+  now = Date.now(),
+): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
     features: reports.map((report) => ({
@@ -52,7 +66,7 @@ function reportsToGeoJSON(reports: NoiseReport[]): GeoJSON.FeatureCollection {
       properties: {
         id: report.id,
         created_at: report.created_at,
-        weight: intensityWeight(report.intensity),
+        weight: liveMapWeight(report, now),
       },
       geometry: {
         type: "Point",
@@ -126,11 +140,98 @@ function addNoiseHeatLayer(
   });
 }
 
+function addPoliceStationsLayer(map: Map, isDark: boolean) {
+  if (map.getSource("police-stations")) {
+    return;
+  }
+
+  if (!map.hasImage("police-phone")) {
+    map.addImage(
+      "police-phone",
+      createLucideMarkerIcon(PHONE_ICON_NODE, PHONE_MARKER_COLORS, 128),
+      { pixelRatio: 2 },
+    );
+  }
+
+  map.addSource("police-stations", {
+    type: "geojson",
+    data: policeStationsToGeoJSON(),
+  });
+
+  map.addLayer({
+    id: "police-stations-halo",
+    type: "circle",
+    source: "police-stations",
+    paint: {
+      "circle-radius": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10,
+        13,
+        14,
+        17,
+        17,
+        22,
+      ],
+      "circle-color": "rgba(52, 199, 89, 0.18)",
+      "circle-opacity": 0.9,
+    },
+  });
+
+  map.addLayer({
+    id: "police-stations-icon",
+    type: "symbol",
+    source: "police-stations",
+    layout: {
+      "icon-image": "police-phone",
+      "icon-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10,
+        0.52,
+        14,
+        0.7,
+        17,
+        0.84,
+      ],
+      "icon-anchor": "center",
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+    },
+  });
+
+  map.addLayer({
+    id: "police-stations-label",
+    type: "symbol",
+    source: "police-stations",
+    minzoom: 13.4,
+    layout: {
+      "text-field": ["get", "name"],
+      "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+      "text-size": 11,
+      "text-offset": [0, 1.75],
+      "text-anchor": "top",
+      "text-max-width": 10,
+      "text-optional": true,
+    },
+    paint: {
+      "text-color": isDark ? "#f5f5f7" : "#1d1d1f",
+      "text-halo-color": isDark
+        ? "rgba(0, 0, 0, 0.72)"
+        : "rgba(255, 255, 255, 0.92)",
+      "text-halo-width": 1.4,
+    },
+  });
+}
+
 export function MapView({
   reports,
   userLocation,
   heatmapVisible = true,
   onMapApi,
+  onSelectPoliceStation,
 }: MapViewProps) {
   const { resolvedTheme } = useTheme();
   const [themeReady, setThemeReady] = useState(false);
@@ -143,6 +244,7 @@ export function MapView({
   const userLocationRef = useRef(userLocation);
   const reportsRef = useRef(reports);
   const heatmapVisibleRef = useRef(heatmapVisible);
+  const onSelectPoliceStationRef = useRef(onSelectPoliceStation);
   const cameraRef = useRef<{
     center: [number, number];
     zoom: number;
@@ -167,6 +269,10 @@ export function MapView({
   useEffect(() => {
     heatmapVisibleRef.current = heatmapVisible;
   }, [heatmapVisible]);
+
+  useEffect(() => {
+    onSelectPoliceStationRef.current = onSelectPoliceStation;
+  }, [onSelectPoliceStation]);
 
   useEffect(() => {
     if (!containerRef.current || !themeReady) {
@@ -202,7 +308,37 @@ export function MapView({
         softenDarkBasemapRoads(map);
       }
       addNoiseHeatLayer(map, reportsRef.current, heatmapVisibleRef.current);
+      addPoliceStationsLayer(map, mapStyleUrl.includes("dark-matter"));
       setStyleReady(true);
+
+      const selectPoliceStation = (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0];
+        if (!feature || feature.geometry.type !== "Point") {
+          return;
+        }
+
+        const [lng, lat] = feature.geometry.coordinates as [number, number];
+        const rawPhone = feature.properties?.phone;
+        const phone =
+          typeof rawPhone === "string" && rawPhone.length > 0 ? rawPhone : null;
+
+        onSelectPoliceStationRef.current?.({
+          id: String(feature.properties?.id ?? `${lng},${lat}`),
+          name: String(feature.properties?.name ?? "Commissariat"),
+          phone,
+          lat,
+          lng,
+        });
+      };
+
+      map.on("click", "police-stations-icon", selectPoliceStation);
+      map.on("click", "police-stations-halo", selectPoliceStation);
+      map.on("mouseenter", "police-stations-icon", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "police-stations-icon", () => {
+        map.getCanvas().style.cursor = "";
+      });
 
       const loc = userLocationRef.current;
       if (loc) {
