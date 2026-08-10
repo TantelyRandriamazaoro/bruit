@@ -175,35 +175,47 @@ body {
   );
 }
 
-/* Apple Maps / Weather-style level legend */
+/* Apple Weather-style glanceable legend chip → sheet for depth */
 .bruit-noise-legend {
-  width: 12.25rem;
-  border-radius: 1.15rem;
-  padding: 0.65rem 0.75rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+  width: 9.75rem;
+  border-radius: 1.1rem;
+  padding: 0.58rem 0.62rem 0.58rem 0.68rem;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.bruit-noise-legend-header {
+.bruit-noise-legend-top {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.52rem;
+  gap: 0.35rem;
+}
+
+.bruit-noise-legend-heading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.14rem;
 }
 
 .bruit-noise-legend-title {
   color: var(--bruit-ink);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: -0.022em;
-  line-height: 1;
+  letter-spacing: -0.028em;
+  line-height: 1.05;
 }
 
-.bruit-noise-legend-meta {
+.bruit-noise-legend-count {
   color: var(--bruit-muted);
-  font-size: 0.64rem;
+  font-size: 0.6rem;
   font-weight: 500;
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
 
@@ -212,56 +224,146 @@ body {
   color: var(--bruit-hairline-strong);
 }
 
-.bruit-noise-legend-scale {
+.bruit-noise-legend-chevron {
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+  color: var(--bruit-muted);
+  opacity: 0.72;
+}
+
+.bruit-noise-legend-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.bruit-noise-legend-key {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bruit-noise-legend-key-bar {
   position: relative;
+  display: block;
+  height: 0.34rem;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.bruit-noise-legend-key-bar-cool {
+  height: 0.3rem;
+  opacity: 0.96;
+}
+
+.bruit-noise-legend-key-label {
+  color: var(--bruit-muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .bruit-noise-legend-bar {
-  height: 0.32rem;
+  position: relative;
+  height: 0.48rem;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.12),
+    0 0.5px 1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
 }
 
-.bruit-noise-legend-ticks {
+.bruit-noise-legend-bar::after {
+  content: "";
   position: absolute;
-  inset: -0.1rem 0;
-  display: flex;
-  justify-content: space-between;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
   pointer-events: none;
 }
 
-.bruit-noise-legend-tick {
-  width: 0.18rem;
-  align-self: stretch;
-  border-radius: 999px;
-  background: var(--bruit-legend-tick);
-  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+.bruit-noise-legend-bar-cool {
+  height: 0.42rem;
+  opacity: 0.95;
 }
 
-.bruit-noise-legend-tick:first-child,
-.bruit-noise-legend-tick:last-child {
-  opacity: 0;
-}
-
-.bruit-noise-legend-labels {
+.bruit-noise-legend-ends {
   display: flex;
   justify-content: space-between;
-  gap: 0.2rem;
-  margin-top: 0.4rem;
-}
-
-.bruit-noise-legend-label {
+  gap: 0.5rem;
+  margin-top: 0.28rem;
   color: var(--bruit-muted);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: -0.015em;
-  line-height: 1.15;
-  white-space: nowrap;
+  line-height: 1.1;
 }
 
-.bruit-noise-legend-label:nth-child(2),
-.bruit-noise-legend-label:nth-child(3) {
-  color: var(--bruit-legend-mid);
+.bruit-legend-drawer {
+  max-height: min(70dvh, 24rem);
+}
+
+.bruit-legend-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+}
+
+.bruit-legend-detail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.bruit-legend-detail-title {
+  margin: 0;
+  color: var(--bruit-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+}
+
+.bruit-legend-detail-meta {
+  margin: 0;
+  color: var(--bruit-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.bruit-legend-detail-scale {
+  min-width: 0;
+}
+
+.dark .bruit-noise-legend-bar,
+.dark .bruit-noise-legend-key-bar {
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.35),
+    0 0.5px 1px rgba(0, 0, 0, 0.25);
+}
+
+.dark .bruit-noise-legend-bar::after {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
 }
 
 .bruit-tabbar {
