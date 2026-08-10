@@ -11,6 +11,7 @@ import {
   intensityLabel,
   relativeTimeMessages,
 } from "@/lib/i18n-helpers";
+import { isHotReportGroupFromReports } from "@/lib/live-map";
 import { intensityIconStyle } from "@/lib/noise-meta";
 import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import type { NoiseReport } from "@/lib/supabase/types";
@@ -59,6 +60,7 @@ export function ClusterDrawer({
   const cluster = selection?.cluster ?? null;
   const reports = cluster?.reports ?? [];
   const title = selection?.areaName ?? t("lookingUpArea");
+  const hot = isHotReportGroupFromReports(reports, now);
 
   return (
     <Drawer.Root
@@ -131,7 +133,9 @@ export function ClusterDrawer({
                         >
                           <span
                             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                            style={intensityIconStyle(report.intensity)}
+                            style={intensityIconStyle(report.intensity, {
+                              hot,
+                            })}
                           >
                             <NoiseCategoryIcon
                               category={report.category}

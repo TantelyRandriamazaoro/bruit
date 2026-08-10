@@ -26,6 +26,7 @@ import {
   intensityLabel,
   relativeTimeMessages,
 } from "@/lib/i18n-helpers";
+import { isHotReportGroupFromReports } from "@/lib/live-map";
 import { intensityIconStyle } from "@/lib/noise-meta";
 import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import type { NoiseReport, VerificationKind } from "@/lib/supabase/types";
@@ -38,7 +39,7 @@ import {
 
 type IncidentDrawerProps = {
   report: NoiseReport | null;
-  /** Auto-prompt when the user walks into a noisy area. */
+  /** Opened from Report while near a live report group. */
   vicinity?: boolean;
   reportCount?: number;
   myKind?: VerificationKind | null;
@@ -252,7 +253,11 @@ export function IncidentDrawer({
           <div className="flex items-start gap-3 px-4 pb-3 pt-2">
             <span
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-              style={intensityIconStyle(report?.intensity)}
+              style={intensityIconStyle(report?.intensity, {
+                hot: report
+                  ? isHotReportGroupFromReports([report], now)
+                  : true,
+              })}
             >
               <NoiseCategoryIcon
                 category={report?.category}

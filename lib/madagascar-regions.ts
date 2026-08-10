@@ -179,8 +179,8 @@ export type RegionGroup<T extends { lat: number; lng: number }> = {
 
 /**
  * Group items by faritra.
- * User’s region first, then closest group (when distanceOf is provided),
- * else by newest item time. Within a group, closest first when possible.
+ * User’s region first, then by newest item time (closest group as tie-break
+ * when distanceOf is provided). Within a group, newest first.
  */
 export function groupByRegion<T extends { lat: number; lng: number }>(
   items: T[],
@@ -221,23 +221,9 @@ export function groupByRegion<T extends { lat: number; lng: number }>(
 
   return [...buckets.entries()]
     .map(([region, groupItems]) => {
-      const sortedItems = [...groupItems];
-      if (distanceOf) {
-        sortedItems.sort((a, b) => {
-          const da = distanceOf(a);
-          const db = distanceOf(b);
-          if (da != null && db != null && da !== db) {
-            return da - db;
-          }
-          if (da != null && db == null) {
-            return -1;
-          }
-          if (da == null && db != null) {
-            return 1;
-          }
-          return newestTime(b) - newestTime(a);
-        });
-      }
+      const sortedItems = [...groupItems].sort(
+        (a, b) => newestTime(b) - newestTime(a),
+      );
       return {
         region,
         items: sortedItems,
@@ -254,6 +240,11 @@ export function groupByRegion<T extends { lat: number; lng: number }>(
       if (b.region === UNKNOWN_REGION) {
         return -1;
       }
+      const aNewest = Math.max(...a.items.map(newestTime));
+      const bNewest = Math.max(...b.items.map(newestTime));
+      if (bNewest !== aNewest) {
+        return bNewest - aNewest;
+      }
       const aDist = minDistance(a.items);
       const bDist = minDistance(b.items);
       if (aDist != null && bDist != null && aDist !== bDist) {
@@ -264,11 +255,6 @@ export function groupByRegion<T extends { lat: number; lng: number }>(
       }
       if (aDist == null && bDist != null) {
         return 1;
-      }
-      const aNewest = Math.max(...a.items.map(newestTime));
-      const bNewest = Math.max(...b.items.map(newestTime));
-      if (bNewest !== aNewest) {
-        return bNewest - aNewest;
       }
       return a.region.localeCompare(b.region);
     });

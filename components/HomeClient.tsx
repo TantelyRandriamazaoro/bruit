@@ -45,10 +45,11 @@ import type {
   NoiseReport,
   VerificationKind,
 } from "@/lib/supabase/types";
+import type { ReportCluster } from "@/lib/cluster-reports";
 import {
   dismissVicinityCluster,
   findVicinityIncident,
-  isVicinityDismissed,
+  vicinityFromCluster,
   type VicinityIncident,
 } from "@/lib/vicinity";
 import { hasSeenWelcome, markWelcomeSeen } from "@/lib/welcome";
@@ -355,8 +356,27 @@ export function HomeClient() {
 
     setStatus(null);
     setSelectedPoliceStation(null);
-    setSelectedIncident(null);
     setMeasureOpen(false);
+    setAboutOpen(false);
+
+    // Report tap near a live cluster → confirm that noise instead of a blank form.
+    if (!seed) {
+      const nearest = findVicinityIncident({
+        reports: liveMapReports,
+        userLocation,
+        myReportIds,
+      });
+      if (nearest) {
+        setDrawerOpen(false);
+        setReportSeedReading(null);
+        setVicinityContext(nearest);
+        setSelectedIncident(nearest.report);
+        return;
+      }
+    }
+
+    setVicinityContext(null);
+    setSelectedIncident(null);
     setReportSeedReading(seed ?? null);
     setDrawerOpen(true);
   };
@@ -382,6 +402,23 @@ export function HomeClient() {
     setVicinityContext(null);
     setSelectedIncident(report);
   }, []);
+
+  const openReportAgain = useCallback(
+    (cluster: ReportCluster) => {
+      const vicinity = vicinityFromCluster(cluster, userLocation);
+      if (!vicinity) {
+        return;
+      }
+      setStatus(null);
+      setSelectedPoliceStation(null);
+      setDrawerOpen(false);
+      setMeasureOpen(false);
+      setAboutOpen(false);
+      setVicinityContext(vicinity);
+      setSelectedIncident(vicinity.report);
+    },
+    [userLocation],
+  );
 
   const closeIncident = useCallback(() => {
     if (verifyBusy || busy) {
@@ -759,67 +796,6 @@ export function HomeClient() {
     verifyBusy,
   ]);
 
-  // Auto-show the incident card when walking into a live noisy area (~300 m).
-  useEffect(() => {
-    if (
-      !hydrated ||
-      !configured ||
-      inAppBrowser ||
-      welcomeOpen ||
-      inAppBrowserAlertOpen ||
-      drawerOpen ||
-      measureOpen ||
-      policeDrawerOpen ||
-      aboutOpen ||
-      busy ||
-      verifyBusy
-    ) {
-      return;
-    }
-
-    // Don't steal focus from a manually opened incident.
-    if (selectedIncident && !vicinityContext) {
-      return;
-    }
-
-    const nearest = findVicinityIncident({
-      reports: liveMapReports,
-      userLocation,
-      myReportIds,
-    });
-
-    if (!nearest || isVicinityDismissed(nearest.clusterId)) {
-      return;
-    }
-
-    if (
-      vicinityContext?.clusterId === nearest.clusterId &&
-      selectedIncident?.id === nearest.report.id
-    ) {
-      return;
-    }
-
-    setVicinityContext(nearest);
-    setSelectedIncident(nearest.report);
-  }, [
-    aboutOpen,
-    busy,
-    configured,
-    drawerOpen,
-    hydrated,
-    inAppBrowser,
-    inAppBrowserAlertOpen,
-    liveMapReports,
-    measureOpen,
-    myReportIds,
-    policeDrawerOpen,
-    selectedIncident,
-    userLocation,
-    verifyBusy,
-    vicinityContext,
-    welcomeOpen,
-  ]);
-
   const showMapChrome = activeTab === "map";
 
   return (
@@ -858,6 +834,7 @@ export function HomeClient() {
           onReport={() => openDrawer()}
           onSelectReport={openIncident}
           onShowOnMap={openHotspotOnMap}
+          onReportAgain={openReportAgain}
           onDeleteReport={(report) => void handleDeleteReport(report)}
         />
       ) : null}
@@ -898,6 +875,7 @@ export function HomeClient() {
         reportCount={liveMapReports.length}
         canLocate={Boolean(userLocation)}
         hidden={!showMapChrome}
+        container={shellEl}
         onLocate={() => mapApi?.locate()}
         onZoomIn={() => mapApi?.zoomIn()}
         onZoomOut={() => mapApi?.zoomOut()}

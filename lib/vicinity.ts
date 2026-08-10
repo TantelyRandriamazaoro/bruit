@@ -68,6 +68,29 @@ export function dismissVicinityCluster(clusterId: string): void {
   window.sessionStorage.setItem(DISMISSED_KEY, JSON.stringify(next));
 }
 
+/** Build a vicinity card context from an activity cluster (e.g. Report Again). */
+export function vicinityFromCluster(
+  cluster: ReportCluster,
+  userLocation: { lat: number; lng: number } | null,
+): VicinityIncident | null {
+  const report = cluster.reports[0];
+  if (!report) {
+    return null;
+  }
+
+  return {
+    clusterId: cluster.id,
+    report,
+    cluster,
+    distanceM: userLocation
+      ? distanceMeters(userLocation, cluster)
+      : Number.POSITIVE_INFINITY,
+    reportCount: cluster.reports.length,
+    category: dominantField(cluster.reports, "category"),
+    intensity: dominantField(cluster.reports, "intensity"),
+  };
+}
+
 /**
  * Nearest live report cluster within VICINITY_RADIUS_M that still has
  * at least one report from someone else.

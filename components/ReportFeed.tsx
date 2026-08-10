@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight, List, Map as MapIcon, Trash2 } from "lucide-react";
+import { Check, ChevronRight, Ear, List, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityDayChrome } from "@/components/ActivityDayChrome";
@@ -28,6 +28,7 @@ import {
   intensityLabel,
   relativeTimeMessages,
 } from "@/lib/i18n-helpers";
+import { isHotReportGroupFromReports } from "@/lib/live-map";
 import {
   groupByRegion,
   UNKNOWN_REGION,
@@ -49,6 +50,8 @@ type ReportFeedProps = {
   onReport: () => void;
   onSelectReport?: (report: NoiseReport) => void;
   onShowOnMap?: (report: NoiseReport) => void;
+  /** Open the confirmation drawer to corroborate a report group. */
+  onReportAgain?: (cluster: ReportCluster) => void;
   onDeleteReport?: (report: NoiseReport) => void | Promise<void>;
   canReport: boolean;
   deletingReportId?: string | null;
@@ -120,6 +123,7 @@ function ClusterRow({
   onOpenReports,
   onShowOnMap,
   onSelectReport,
+  onReportAgain,
   t,
   tCategories,
   tIntensities,
@@ -133,6 +137,7 @@ function ClusterRow({
   onOpenReports: () => void;
   onShowOnMap?: (report: NoiseReport) => void;
   onSelectReport?: (report: NoiseReport) => void;
+  onReportAgain?: (cluster: ReportCluster) => void;
   t: ReturnType<typeof useTranslations<"Feed">>;
   tCategories: ReturnType<typeof useTranslations<"Categories">>;
   tIntensities: ReturnType<typeof useTranslations<"Intensities">>;
@@ -153,7 +158,8 @@ function ClusterRow({
   const level = isGroup
     ? loudestIntensity(cluster.reports.map((report) => report.intensity))
     : newest.intensity;
-  const iconStyle = intensityIconStyle(level);
+  const hot = isHotReportGroupFromReports(cluster.reports, now);
+  const iconStyle = intensityIconStyle(level, { hot });
 
   const goToMap = () => {
     if (onShowOnMap) {
@@ -222,11 +228,18 @@ function ClusterRow({
           >
             <button
               type="button"
-              onClick={goToMap}
+              onClick={() => {
+                if (onReportAgain) {
+                  onReportAgain(cluster);
+                  return;
+                }
+                onSelectReport?.(newest);
+              }}
               className="bruit-feed-chip cursor-pointer"
+              aria-label={t("reportAgainAria")}
             >
-              <MapIcon size={13} strokeWidth={2.1} aria-hidden />
-              {t("openIncidentShort")}
+              <Ear size={13} strokeWidth={2.1} aria-hidden />
+              {t("reportAgain")}
             </button>
             <button
               type="button"
@@ -312,6 +325,7 @@ export function ReportFeed({
   onReport,
   onSelectReport,
   onShowOnMap,
+  onReportAgain,
   onDeleteReport,
   canReport,
   deletingReportId = null,
@@ -523,7 +537,7 @@ export function ReportFeed({
     myReports.length === 0 ? t("myReportsEmpty") : t("myReportsEmptyScoped");
 
   return (
-    <section className="bruit-feed absolute inset-0 z-10 flex flex-col bg-[var(--bruit-map-wash)]">
+    <section className="bruit-feed absolute inset-0 z-10 flex flex-col overflow-y-auto overscroll-contain bg-[var(--bruit-map-wash)] pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)] md:overflow-hidden md:pb-0">
       <header className="bruit-feed-header shrink-0 px-5 pb-2 pt-[max(0.85rem,env(safe-area-inset-top))]">
         <h1 className="bruit-brand text-[2.15rem] font-bold tracking-tight text-[var(--bruit-ink)]">
           {t("title")}
@@ -538,7 +552,7 @@ export function ReportFeed({
         />
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
+      <div className="px-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
         <div className="mx-auto max-w-lg space-y-5">
           <section aria-labelledby="feed-my-reports-title">
             <p
@@ -577,7 +591,12 @@ export function ReportFeed({
                           >
                             <span
                               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                              style={intensityIconStyle(report.intensity)}
+                              style={intensityIconStyle(report.intensity, {
+                                hot: isHotReportGroupFromReports(
+                                  [report],
+                                  now,
+                                ),
+                              })}
                             >
                               <NoiseCategoryIcon
                                 category={report.category}
@@ -724,6 +743,7 @@ export function ReportFeed({
                             }
                             onShowOnMap={onShowOnMap}
                             onSelectReport={onSelectReport}
+                            onReportAgain={onReportAgain}
                             t={t}
                             tCategories={tCategories}
                             tIntensities={tIntensities}
@@ -777,6 +797,7 @@ export function ReportFeed({
                                 }
                                 onShowOnMap={onShowOnMap}
                                 onSelectReport={onSelectReport}
+                                onReportAgain={onReportAgain}
                                 t={t}
                                 tCategories={tCategories}
                                 tIntensities={tIntensities}
