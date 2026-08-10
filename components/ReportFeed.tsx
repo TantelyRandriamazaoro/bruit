@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
 import { clusterNearbyReports } from "@/lib/cluster-reports";
-import { formatCoordPair, formatRelativeTime } from "@/lib/format";
+import { formatRelativeTime } from "@/lib/format";
 import {
   categoryLabel,
   intensityLabel,
@@ -81,12 +81,17 @@ export function ReportFeed({
   const clusters = useMemo(() => clusterNearbyReports(reports), [reports]);
 
   const areaPoints = useMemo(
-    () =>
-      clusters.map((cluster) => ({
+    () => [
+      ...clusters.map((cluster) => ({
         lat: cluster.lat,
         lng: cluster.lng,
       })),
-    [clusters],
+      ...myReports.map((report) => ({
+        lat: report.lat,
+        lng: report.lng,
+      })),
+    ],
+    [clusters, myReports],
   );
 
   const areaPointsKey = useMemo(
@@ -130,13 +135,13 @@ export function ReportFeed({
     });
   };
 
-  const areaNameFor = (cluster: {
-    cellKey: string;
+  const areaNameFor = (point: {
+    cellKey?: string;
     lat: number;
     lng: number;
   }) =>
-    areaLabels[cluster.cellKey] ??
-    areaLabels[areaCellKey(cluster.lat, cluster.lng)] ??
+    (point.cellKey ? areaLabels[point.cellKey] : undefined) ??
+    areaLabels[areaCellKey(point.lat, point.lng)] ??
     null;
 
   const handleDelete = (report: NoiseReport) => {
@@ -180,6 +185,7 @@ export function ReportFeed({
                 <ul>
                   {myReports.map((report, index) => {
                     const deleting = deletingReportId === report.id;
+                    const areaName = areaNameFor(report);
                     return (
                       <li key={report.id}>
                         {index > 0 ? (
@@ -201,7 +207,7 @@ export function ReportFeed({
                             <span className="min-w-0 flex-1 py-0.5">
                               <span className="flex items-baseline justify-between gap-3">
                                 <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                                  {categoryLabel(tCategories, report.category)}
+                                  {areaName ?? t("lookingUpArea")}
                                 </span>
                                 <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
                                   {formatRelativeTime(
@@ -212,6 +218,10 @@ export function ReportFeed({
                                 </span>
                               </span>
                               <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
+                                {categoryLabel(tCategories, report.category)}
+                                <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                                  ·
+                                </span>
                                 {intensityLabel(tIntensities, report.intensity)}
                                 {typeof report.db_avg === "number" ? (
                                   <>
@@ -221,10 +231,6 @@ export function ReportFeed({
                                     {Math.round(report.db_avg)} dB
                                   </>
                                 ) : null}
-                                <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
-                                  ·
-                                </span>
-                                {formatCoordPair(report.lat, report.lng)}
                               </span>
                             </span>
                             <Chevron />
@@ -417,7 +423,7 @@ export function ReportFeed({
                             <span className="min-w-0 flex-1 py-0.5">
                               <span className="flex items-baseline justify-between gap-3">
                                 <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                                  {categoryLabel(tCategories, newest.category)}
+                                  {areaName ?? t("lookingUpArea")}
                                 </span>
                                 <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
                                   {formatRelativeTime(
@@ -428,12 +434,19 @@ export function ReportFeed({
                                 </span>
                               </span>
                               <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-                                {intensityLabel(tIntensities, newest.intensity)}
+                                {categoryLabel(tCategories, newest.category)}
                                 <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                                   ·
                                 </span>
-                                {areaName ??
-                                  formatCoordPair(newest.lat, newest.lng)}
+                                {intensityLabel(tIntensities, newest.intensity)}
+                                {typeof newest.db_avg === "number" ? (
+                                  <>
+                                    <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                                      ·
+                                    </span>
+                                    {Math.round(newest.db_avg)} dB
+                                  </>
+                                ) : null}
                               </span>
                             </span>
                             <Chevron />
