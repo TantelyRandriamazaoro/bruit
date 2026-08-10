@@ -1,12 +1,19 @@
 "use client";
 
 import { ChevronRight, List, Map as MapIcon, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { ActivityDayChrome } from "@/components/ActivityDayChrome";
+import {
+  ACTIVITY_SCOPE_24H,
+  buildActivityScopes,
+  filterReportsByScope,
+} from "@/lib/activity-scope";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
 import { NEARBY_ACTIVITY_KM } from "@/lib/constants";
 import {
+  ACTIVITY_CLUSTER_RADIUS_M,
   clusterNearbyReports,
   distanceMeters,
   type ReportCluster,
@@ -259,10 +266,13 @@ export function ReportFeed({
   deletingReportId = null,
 }: ReportFeedProps) {
   const t = useTranslations("Feed");
+  const tCommon = useTranslations("Common");
   const tCategories = useTranslations("Categories");
   const tIntensities = useTranslations("Intensities");
   const tTime = useTranslations("Time");
+  const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
+  const [scopeKey, setScopeKey] = useState(ACTIVITY_SCOPE_24H);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [areaLabels, setAreaLabels] = useState<AreaLabelMap>({});
   const timeMessages = relativeTimeMessages(tTime);
@@ -272,7 +282,54 @@ export function ReportFeed({
     return () => window.clearInterval(id);
   }, []);
 
-  const clusters = useMemo(() => clusterNearbyReports(reports), [reports]);
+  const scopeLabels = useMemo(
+    () => ({
+      rolling24h: t("rolling24h"),
+      rolling24hShort: t("rolling24hShort"),
+      today: tCommon("today"),
+      yesterday: tCommon("yesterday"),
+    }),
+    [t, tCommon],
+  );
+
+  const scopes = useMemo(
+    () => buildActivityScopes(reports, scopeLabels, locale, now),
+    [reports, scopeLabels, locale, now],
+  );
+
+  const activeScope = useMemo(
+    () =>
+      scopes.find((scope) => scope.key === scopeKey) ??
+      scopes.find((scope) => scope.key === ACTIVITY_SCOPE_24H) ??
+      scopes[scopes.length - 1] ??
+      null,
+    [scopes, scopeKey],
+  );
+
+  useEffect(() => {
+    if (scopes.length === 0) {
+      return;
+    }
+    if (!scopes.some((scope) => scope.key === scopeKey)) {
+      setScopeKey(ACTIVITY_SCOPE_24H);
+    }
+  }, [scopes, scopeKey]);
+
+  const scopedReports = useMemo(
+    () => (activeScope ? filterReportsByScope(reports, activeScope) : reports),
+    [reports, activeScope],
+  );
+
+  const scopedMyReports = useMemo(
+    () =>
+      activeScope ? filterReportsByScope(myReports, activeScope) : myReports,
+    [myReports, activeScope],
+  );
+
+  const clusters = useMemo(
+    () => clusterNearbyReports(scopedReports, ACTIVITY_CLUSTER_RADIUS_M),
+    [scopedReports],
+  );
 
   const { nearbyClusters, fartherClusters } = useMemo(() => {
     if (!userLocation) {
@@ -312,12 +369,12 @@ export function ReportFeed({
         lat: cluster.lat,
         lng: cluster.lng,
       })),
-      ...myReports.map((report) => ({
+      ...scopedMyReports.map((report) => ({
         lat: report.lat,
         lng: report.lng,
       })),
     ],
-    [clusters, myReports],
+    [clusters, scopedMyReports],
   );
 
   const areaPointsKey = useMemo(
@@ -385,15 +442,25 @@ export function ReportFeed({
     void onDeleteReport(report);
   };
 
+  const periodLabel = activeScope?.label ?? t("rolling24h");
+  const hasAnyInScope = scopedReports.length > 0;
+  const myReportsEmptyCopy =
+    myReports.length === 0 ? t("myReportsEmpty") : t("myReportsEmptyScoped");
+
   return (
     <section className="bruit-feed absolute inset-0 z-10 flex flex-col bg-[var(--bruit-map-wash)]">
-      <header className="bruit-feed-header shrink-0 px-5 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))]">
+      <header className="bruit-feed-header shrink-0 px-5 pb-2 pt-[max(0.85rem,env(safe-area-inset-top))]">
         <h1 className="bruit-brand text-[2.15rem] font-bold tracking-tight text-[var(--bruit-ink)]">
           {t("title")}
         </h1>
         <p className="mt-1 max-w-sm text-[0.94rem] font-medium leading-snug text-[var(--bruit-muted)]">
-          {t("subtitle")}
+          {t("subtitleScoped", { period: periodLabel })}
         </p>
+        <ActivityDayChrome
+          scopes={scopes}
+          activeKey={activeScope?.key ?? ACTIVITY_SCOPE_24H}
+          onChange={setScopeKey}
+        />
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
@@ -405,14 +472,14 @@ export function ReportFeed({
             >
               {t("myReports")}
             </p>
-            {myReports.length === 0 ? (
+            {scopedMyReports.length === 0 ? (
               <div className="bruit-grouped-list px-4 py-4 text-[0.9rem] font-medium text-[var(--bruit-muted)]">
-                {t("myReportsEmpty")}
+                {myReportsEmptyCopy}
               </div>
             ) : (
               <div className="bruit-grouped-list overflow-hidden">
                 <ul>
-                  {myReports.map((report, index) => {
+                  {scopedMyReports.map((report, index) => {
                     const deleting = deletingReportId === report.id;
                     const areaName = areaNameFor(report);
                     return (
@@ -485,7 +552,7 @@ export function ReportFeed({
             )}
           </section>
 
-          {reports.length === 0 ? (
+          {!hasAnyInScope ? (
             <section aria-labelledby="feed-empty-title">
               <p
                 id="feed-empty-title"
@@ -498,10 +565,10 @@ export function ReportFeed({
                   <List size={24} strokeWidth={1.7} aria-hidden />
                 </div>
                 <p className="text-[1.2rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                  {t("emptyTitle")}
+                  {reports.length === 0 ? t("emptyTitle") : t("emptyScopedTitle")}
                 </p>
                 <p className="mt-1.5 text-[0.92rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-                  {t("emptyBody")}
+                  {reports.length === 0 ? t("emptyBody") : t("emptyScopedBody")}
                 </p>
                 <button
                   type="button"

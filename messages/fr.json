@@ -27,10 +27,17 @@
     "insights": "Tendances",
     "help": "Aide",
     "report": "Signaler",
+    "measure": "Mesurer",
+    "measureNoise": "Mesurer le niveau sonore",
     "sending": "Envoi…",
     "sendingReport": "Envoi du signalement",
     "reportNoise": "Signaler un bruit",
     "reportAvailableIn": "Vous pourrez signaler à nouveau dans {time}"
+  },
+  "Measure": {
+    "title": "Niveau sonore",
+    "subtitle": "Orientez le téléphone vers le son",
+    "reportThis": "Signaler ce bruit"
   },
   "Categories": {
     "traffic": {
@@ -102,6 +109,8 @@
     "measurePause": "Pause",
     "avgShort": "moy.",
     "peakShort": "pic",
+    "avgLabel": "Moyenne",
+    "peakLabel": "Pic",
     "measureFootnote": "Estimation via le micro de cet appareil · échantillon de {seconds} s. Pas un sonomètre calibré.",
     "band": {
       "quiet": "Calme",
@@ -116,9 +125,17 @@
   },
   "Feed": {
     "title": "Activité",
-    "subtitle": "Près de vous, puis par région · 7 derniers jours",
+    "subtitle": "Près de vous, puis par région",
+    "subtitleScoped": "{period} · près de vous, puis par région",
+    "rolling24h": "Dernières 24 heures",
+    "rolling24hShort": "24 h",
+    "chooseDay": "Choisir un jour",
+    "dayReports": ", {count} signalements",
+    "dayQuiet": ", calme",
     "emptyTitle": "Aucun signalement pour l’instant",
     "emptyBody": "Les signalements apparaîtront ici — d’abord à proximité, puis par région.",
+    "emptyScopedTitle": "Rien sur cette période",
+    "emptyScopedBody": "Essayez un autre jour, ou signalez un bruit près de vous.",
     "reportNoise": "Signaler un bruit",
     "lookingUpArea": "Recherche du lieu…",
     "reportsCount": "{count, plural, one {# signalement} other {# signalements}}",
@@ -126,6 +143,7 @@
     "showOnMapShort": "Voir sur la carte",
     "myReports": "Mes signalements",
     "myReportsEmpty": "Les signalements de cet appareil apparaîtront ici.",
+    "myReportsEmptyScoped": "Aucun signalement de cet appareil sur cette période.",
     "nearby": "À proximité",
     "away": "à {distance}",
     "locationOff": "Activez la localisation pour voir ce qui est à proximité.",

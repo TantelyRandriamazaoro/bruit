@@ -27,10 +27,17 @@
     "insights": "Trends",
     "help": "Help",
     "report": "Report",
+    "measure": "Measure",
+    "measureNoise": "Measure sound level",
     "sending": "Sending…",
     "sendingReport": "Sending report",
     "reportNoise": "Report a noise",
     "reportAvailableIn": "You can report again in {time}"
+  },
+  "Measure": {
+    "title": "Sound Level",
+    "subtitle": "Hold the phone toward the sound",
+    "reportThis": "Report this noise"
   },
   "Categories": {
     "traffic": {
@@ -102,6 +109,8 @@
     "measurePause": "Pause",
     "avgShort": "avg",
     "peakShort": "peak",
+    "avgLabel": "Average",
+    "peakLabel": "Peak",
     "measureFootnote": "Estimated from this device’s mic · {seconds}s sample. Not a calibrated SPL meter.",
     "band": {
       "quiet": "Quiet",
@@ -116,9 +125,17 @@
   },
   "Feed": {
     "title": "Activity",
-    "subtitle": "Near you, then by region · last 7 days",
+    "subtitle": "Near you, then by region",
+    "subtitleScoped": "{period} · near you, then by region",
+    "rolling24h": "Last 24 hours",
+    "rolling24hShort": "24h",
+    "chooseDay": "Choose a day",
+    "dayReports": ", {count} reports",
+    "dayQuiet": ", quiet",
     "emptyTitle": "No reports yet",
     "emptyBody": "Noise reports will appear here — nearby first, then by region.",
+    "emptyScopedTitle": "Nothing in this period",
+    "emptyScopedBody": "Try another day, or report noise near you.",
     "reportNoise": "Report Noise",
     "lookingUpArea": "Finding location…",
     "reportsCount": "{count, plural, one {# report} other {# reports}}",
@@ -126,6 +143,7 @@
     "showOnMapShort": "Show on map",
     "myReports": "My reports",
     "myReportsEmpty": "Reports from this device will appear here.",
+    "myReportsEmptyScoped": "No reports from this device in this period.",
     "nearby": "Nearby",
     "away": "{distance} away",
     "locationOff": "Turn on location to see what’s nearby.",

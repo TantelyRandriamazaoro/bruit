@@ -1,8 +1,10 @@
 import { areaCellKey } from "@/lib/area-cell";
 import type { NoiseReport } from "@/lib/supabase/types";
 
-/** Reports within this radius are treated as the same place. */
+/** Reports within this radius are treated as the same place (Insights hotspots). */
 export const CLUSTER_RADIUS_M = 120;
+/** Wider grouping for Activity — neighborhood scale, not a single street corner. */
+export const ACTIVITY_CLUSTER_RADIUS_M = 400;
 
 export type ReportCluster = {
   id: string;
