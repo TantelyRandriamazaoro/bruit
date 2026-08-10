@@ -178,12 +178,15 @@ export type RegionGroup<T extends { lat: number; lng: number }> = {
 };
 
 /**
- * Group items by faritra. User’s region first, then by newest item time.
+ * Group items by faritra.
+ * User’s region first, then closest group (when distanceOf is provided),
+ * else by newest item time. Within a group, closest first when possible.
  */
 export function groupByRegion<T extends { lat: number; lng: number }>(
   items: T[],
   userLocation: { lat: number; lng: number } | null,
   newestTime: (item: T) => number,
+  distanceOf?: (item: T) => number | null,
 ): RegionGroup<T>[] {
   const buckets = new Map<string, T[]>();
 
@@ -199,12 +202,48 @@ export function groupByRegion<T extends { lat: number; lng: number }>(
 
   const userRegion = userLocation ? regionForPoint(userLocation) : null;
 
+  const minDistance = (groupItems: T[]) => {
+    if (!distanceOf) {
+      return null;
+    }
+    let best: number | null = null;
+    for (const item of groupItems) {
+      const d = distanceOf(item);
+      if (d == null || !Number.isFinite(d)) {
+        continue;
+      }
+      if (best == null || d < best) {
+        best = d;
+      }
+    }
+    return best;
+  };
+
   return [...buckets.entries()]
-    .map(([region, groupItems]) => ({
-      region,
-      items: groupItems,
-      isUserRegion: Boolean(userRegion && region === userRegion),
-    }))
+    .map(([region, groupItems]) => {
+      const sortedItems = [...groupItems];
+      if (distanceOf) {
+        sortedItems.sort((a, b) => {
+          const da = distanceOf(a);
+          const db = distanceOf(b);
+          if (da != null && db != null && da !== db) {
+            return da - db;
+          }
+          if (da != null && db == null) {
+            return -1;
+          }
+          if (da == null && db != null) {
+            return 1;
+          }
+          return newestTime(b) - newestTime(a);
+        });
+      }
+      return {
+        region,
+        items: sortedItems,
+        isUserRegion: Boolean(userRegion && region === userRegion),
+      };
+    })
     .sort((a, b) => {
       if (a.isUserRegion !== b.isUserRegion) {
         return a.isUserRegion ? -1 : 1;
@@ -214,6 +253,17 @@ export function groupByRegion<T extends { lat: number; lng: number }>(
       }
       if (b.region === UNKNOWN_REGION) {
         return -1;
+      }
+      const aDist = minDistance(a.items);
+      const bDist = minDistance(b.items);
+      if (aDist != null && bDist != null && aDist !== bDist) {
+        return aDist - bDist;
+      }
+      if (aDist != null && bDist == null) {
+        return -1;
+      }
+      if (aDist == null && bDist != null) {
+        return 1;
       }
       const aNewest = Math.max(...a.items.map(newestTime));
       const bNewest = Math.max(...b.items.map(newestTime));

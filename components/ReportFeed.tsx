@@ -1,9 +1,13 @@
 "use client";
 
-import { ChevronRight, List, Map as MapIcon, Trash2 } from "lucide-react";
+import { Check, ChevronRight, List, Map as MapIcon, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityDayChrome } from "@/components/ActivityDayChrome";
+import {
+  ClusterDrawer,
+  type ClusterDrawerSelection,
+} from "@/components/ClusterDrawer";
 import {
   ACTIVITY_SCOPE_24H,
   buildActivityScopes,
@@ -11,13 +15,13 @@ import {
 } from "@/lib/activity-scope";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
-import { NEARBY_ACTIVITY_KM } from "@/lib/constants";
 import {
   ACTIVITY_CLUSTER_RADIUS_M,
   clusterNearbyReports,
   distanceMeters,
   type ReportCluster,
 } from "@/lib/cluster-reports";
+import { NEARBY_ACTIVITY_KM } from "@/lib/constants";
 import { formatDistanceKm, formatRelativeTime } from "@/lib/format";
 import {
   categoryLabel,
@@ -28,8 +32,13 @@ import {
   groupByRegion,
   UNKNOWN_REGION,
 } from "@/lib/madagascar-regions";
+import {
+  intensityIconStyle,
+  loudestIntensity,
+} from "@/lib/noise-meta";
 import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import type { NoiseReport } from "@/lib/supabase/types";
+import { hearCount, isCommunityConfirmed } from "@/lib/verification";
 
 type NearbyCluster = ReportCluster & { distanceKm: number };
 
@@ -39,9 +48,11 @@ type ReportFeedProps = {
   userLocation: { lat: number; lng: number } | null;
   onReport: () => void;
   onSelectReport?: (report: NoiseReport) => void;
+  onShowOnMap?: (report: NoiseReport) => void;
   onDeleteReport?: (report: NoiseReport) => void | Promise<void>;
   canReport: boolean;
   deletingReportId?: string | null;
+  container?: HTMLElement | null;
 };
 
 function dominantCategory(reports: NoiseReport[]): string | null | undefined {
@@ -82,26 +93,45 @@ function MetaDot() {
   );
 }
 
+function VerifiedMark({ label }: { label: string }) {
+  return (
+    <span className="bruit-verified-inline" title={label}>
+      <Check size={11} strokeWidth={2.6} aria-hidden />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function clusterHearCount(reports: NoiseReport[]): number {
+  return reports.reduce((sum, report) => sum + hearCount(report), 0);
+}
+
+function clusterIsConfirmed(reports: NoiseReport[]): boolean {
+  return reports.some((report) => isCommunityConfirmed(report));
+}
+
 function ClusterRow({
   cluster,
-  expanded,
   areaName,
   distanceLabel,
+  nearby,
   now,
   timeMessages,
-  onToggle,
+  onOpenReports,
+  onShowOnMap,
   onSelectReport,
   t,
   tCategories,
   tIntensities,
 }: {
   cluster: ReportCluster;
-  expanded: boolean;
   areaName: string | null;
   distanceLabel?: string | null;
+  nearby?: boolean;
   now: number;
   timeMessages: ReturnType<typeof relativeTimeMessages>;
-  onToggle: () => void;
+  onOpenReports: () => void;
+  onShowOnMap?: (report: NoiseReport) => void;
   onSelectReport?: (report: NoiseReport) => void;
   t: ReturnType<typeof useTranslations<"Feed">>;
   tCategories: ReturnType<typeof useTranslations<"Categories">>;
@@ -112,31 +142,60 @@ function ClusterRow({
   const category = isGroup
     ? dominantCategory(cluster.reports)
     : newest.category;
+  const confirmed = isGroup
+    ? clusterIsConfirmed(cluster.reports)
+    : isCommunityConfirmed(newest);
+  const confirmedCount = isGroup
+    ? clusterHearCount(cluster.reports)
+    : hearCount(newest);
+  const verifiedLabel =
+    confirmedCount > 0 ? t("confirmedShort", { count: confirmedCount }) : null;
+  const level = isGroup
+    ? loudestIntensity(cluster.reports.map((report) => report.intensity))
+    : newest.intensity;
+  const iconStyle = intensityIconStyle(level);
+
+  const goToMap = () => {
+    if (onShowOnMap) {
+      onShowOnMap(newest);
+      return;
+    }
+    onSelectReport?.(newest);
+  };
 
   if (isGroup) {
     return (
-      <>
-        <div className="flex w-full items-stretch">
+      <div className="bruit-feed-row bruit-feed-row-group items-start">
+        <span
+          className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+          style={iconStyle}
+        >
+          <NoiseCategoryIcon
+            category={category}
+            size={17}
+            strokeWidth={1.7}
+          />
+          <span className="bruit-cluster-badge" aria-hidden>
+            {cluster.reports.length}
+          </span>
+        </span>
+        <div className="min-w-0 flex-1 py-0.5">
           <button
             type="button"
-            onClick={onToggle}
-            className="bruit-feed-row min-w-0 flex-1 cursor-pointer text-left transition-colors duration-150"
-            aria-expanded={expanded}
+            onClick={goToMap}
+            className="flex w-full cursor-pointer items-start gap-2 border-none bg-transparent p-0 text-left"
+            aria-label={t("showOnMap")}
           >
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
-              <NoiseCategoryIcon
-                category={category}
-                size={17}
-                strokeWidth={1.7}
-              />
-              <span className="bruit-cluster-badge" aria-hidden>
-                {cluster.reports.length}
-              </span>
-            </span>
-            <span className="min-w-0 flex-1 py-0.5">
+            <span className="min-w-0 flex-1">
               <span className="flex items-baseline justify-between gap-3">
                 <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
                   {areaName ?? t("lookingUpArea")}
+                  {confirmed && verifiedLabel ? (
+                    <>
+                      {" "}
+                      <VerifiedMark label={verifiedLabel} />
+                    </>
+                  ) : null}
                 </span>
                 <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
                   {formatRelativeTime(newest.created_at, timeMessages, now)}
@@ -149,74 +208,59 @@ function ClusterRow({
                     <MetaDot />
                   </>
                 ) : null}
-                {t("reportsCount", { count: cluster.reports.length })}
-                <MetaDot />
                 {categoryLabel(tCategories, category)}
               </span>
             </span>
-            <Chevron expanded={expanded} />
+            <span className="mt-1.5 shrink-0">
+              <Chevron />
+            </span>
           </button>
-          <button
-            type="button"
-            onClick={() => onSelectReport?.(newest)}
-            className="bruit-feed-map-btn cursor-pointer"
-            aria-label={t("showOnMap")}
-            title={t("showOnMapShort")}
+          <div
+            className="bruit-feed-chips"
+            role="group"
+            aria-label={t("groupActions")}
           >
-            <MapIcon size={16} strokeWidth={1.7} aria-hidden />
-          </button>
+            <button
+              type="button"
+              onClick={goToMap}
+              className="bruit-feed-chip cursor-pointer"
+            >
+              <MapIcon size={13} strokeWidth={2.1} aria-hidden />
+              {t("openIncidentShort")}
+            </button>
+            <button
+              type="button"
+              onClick={onOpenReports}
+              className="bruit-feed-chip cursor-pointer"
+            >
+              {t("reportsCount", { count: cluster.reports.length })}
+            </button>
+          </div>
         </div>
-
-        {expanded ? (
-          <ul className="bruit-cluster-children">
-            {cluster.reports.map((report) => (
-              <li key={report.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelectReport?.(report)}
-                  className="bruit-feed-row bruit-feed-row-nested w-full cursor-pointer text-left transition-colors duration-150"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.08)] text-[var(--bruit-accent)]">
-                    <NoiseCategoryIcon
-                      category={report.category}
-                      size={15}
-                      strokeWidth={1.7}
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1 py-0.5">
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-[0.95rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                        {categoryLabel(tCategories, report.category)}
-                      </span>
-                      <span className="shrink-0 text-[0.74rem] font-medium tabular-nums text-[var(--bruit-muted)]">
-                        {formatRelativeTime(
-                          report.created_at,
-                          timeMessages,
-                          now,
-                        )}
-                      </span>
-                    </span>
-                    <span className="mt-0.5 block truncate text-[0.8rem] font-medium text-[var(--bruit-muted)]">
-                      {intensityLabel(tIntensities, report.intensity)}
-                    </span>
-                  </span>
-                  <Chevron />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </>
+      </div>
     );
   }
 
   return (
     <button
       type="button"
-      onClick={() => onSelectReport?.(newest)}
+      onClick={() => {
+        if (nearby) {
+          onSelectReport?.(newest);
+          return;
+        }
+        if (onShowOnMap) {
+          onShowOnMap(newest);
+          return;
+        }
+        onSelectReport?.(newest);
+      }}
       className="bruit-feed-row w-full cursor-pointer text-left transition-colors duration-150"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        style={iconStyle}
+      >
         <NoiseCategoryIcon
           category={newest.category}
           size={17}
@@ -227,6 +271,12 @@ function ClusterRow({
         <span className="flex items-baseline justify-between gap-3">
           <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
             {areaName ?? t("lookingUpArea")}
+            {confirmed && verifiedLabel ? (
+              <>
+                {" "}
+                <VerifiedMark label={verifiedLabel} />
+              </>
+            ) : null}
           </span>
           <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
             {formatRelativeTime(newest.created_at, timeMessages, now)}
@@ -261,9 +311,11 @@ export function ReportFeed({
   userLocation,
   onReport,
   onSelectReport,
+  onShowOnMap,
   onDeleteReport,
   canReport,
   deletingReportId = null,
+  container = null,
 }: ReportFeedProps) {
   const t = useTranslations("Feed");
   const tCommon = useTranslations("Common");
@@ -273,7 +325,8 @@ export function ReportFeed({
   const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
   const [scopeKey, setScopeKey] = useState(ACTIVITY_SCOPE_24H);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [clusterSelection, setClusterSelection] =
+    useState<ClusterDrawerSelection | null>(null);
   const [areaLabels, setAreaLabels] = useState<AreaLabelMap>({});
   const timeMessages = relativeTimeMessages(tTime);
 
@@ -335,33 +388,43 @@ export function ReportFeed({
     if (!userLocation) {
       return {
         nearbyClusters: [] as NearbyCluster[],
-        fartherClusters: clusters,
+        fartherClusters: [] as NearbyCluster[],
       };
     }
 
     const nearby: NearbyCluster[] = [];
-    const farther: ReportCluster[] = [];
+    const farther: NearbyCluster[] = [];
 
     for (const cluster of clusters) {
       const distanceKm = distanceMeters(userLocation, cluster) / 1000;
-      if (distanceKm <= NEARBY_ACTIVITY_KM) {
-        nearby.push({ ...cluster, distanceKm });
+      const withDistance = { ...cluster, distanceKm };
+      if (distanceKm < NEARBY_ACTIVITY_KM) {
+        nearby.push(withDistance);
       } else {
-        farther.push(cluster);
+        farther.push(withDistance);
       }
     }
 
     nearby.sort((a, b) => a.distanceKm - b.distanceKm);
+    farther.sort((a, b) => a.distanceKm - b.distanceKm);
     return { nearbyClusters: nearby, fartherClusters: farther };
   }, [clusters, userLocation]);
 
-  const regionGroups = useMemo(
-    () =>
-      groupByRegion(fartherClusters, userLocation, (cluster) =>
+  const regionGroups = useMemo(() => {
+    // Without location, show everything under region names (newest first).
+    if (!userLocation) {
+      return groupByRegion(clusters, null, (cluster) =>
         new Date(cluster.reports[0]?.created_at ?? 0).getTime(),
-      ),
-    [fartherClusters, userLocation],
-  );
+      );
+    }
+
+    return groupByRegion(
+      fartherClusters,
+      userLocation,
+      (cluster) => new Date(cluster.reports[0]?.created_at ?? 0).getTime(),
+      (cluster) => cluster.distanceKm,
+    );
+  }, [clusters, fartherClusters, userLocation]);
 
   const areaPoints = useMemo(
     () => [
@@ -406,18 +469,6 @@ export function ReportFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [areaPointsKey]);
 
-  const toggleExpanded = (clusterId: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(clusterId)) {
-        next.delete(clusterId);
-      } else {
-        next.add(clusterId);
-      }
-      return next;
-    });
-  };
-
   const areaNameFor = (point: {
     cellKey?: string;
     lat: number;
@@ -426,6 +477,30 @@ export function ReportFeed({
     (point.cellKey ? areaLabels[point.cellKey] : undefined) ??
     areaLabels[areaCellKey(point.lat, point.lng)] ??
     null;
+
+  const openClusterDrawer = (
+    cluster: ReportCluster,
+    options?: { distanceLabel?: string | null; nearby?: boolean },
+  ) => {
+    setClusterSelection({
+      cluster,
+      areaName: areaNameFor(cluster),
+      distanceLabel: options?.distanceLabel ?? null,
+      nearby: Boolean(options?.nearby),
+    });
+  };
+
+  const activateReport = (report: NoiseReport, nearby: boolean) => {
+    if (nearby) {
+      onSelectReport?.(report);
+      return;
+    }
+    if (onShowOnMap) {
+      onShowOnMap(report);
+      return;
+    }
+    onSelectReport?.(report);
+  };
 
   const regionTitle = (region: string) =>
     region === UNKNOWN_REGION ? t("elsewhere") : region;
@@ -490,10 +565,20 @@ export function ReportFeed({
                         <div className="flex w-full items-stretch">
                           <button
                             type="button"
-                            onClick={() => onSelectReport?.(report)}
+                            onClick={() => {
+                              const nearby = userLocation
+                                ? distanceMeters(userLocation, report) /
+                                    1000 <
+                                  NEARBY_ACTIVITY_KM
+                                : false;
+                              activateReport(report, nearby);
+                            }}
                             className="bruit-feed-row min-w-0 flex-1 cursor-pointer text-left transition-colors duration-150"
                           >
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,122,255,0.12)] text-[var(--bruit-accent)]">
+                            <span
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                              style={intensityIconStyle(report.intensity)}
+                            >
                               <NoiseCategoryIcon
                                 category={report.category}
                                 size={17}
@@ -525,6 +610,18 @@ export function ReportFeed({
                                       ·
                                     </span>
                                     {Math.round(report.db_avg)} dB
+                                  </>
+                                ) : null}
+                                {isCommunityConfirmed(report) ? (
+                                  <>
+                                    <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                                      ·
+                                    </span>
+                                    <VerifiedMark
+                                      label={t("confirmedShort", {
+                                        count: hearCount(report),
+                                      })}
+                                    />
                                   </>
                                 ) : null}
                               </span>
@@ -608,14 +705,24 @@ export function ReportFeed({
                           ) : null}
                           <ClusterRow
                             cluster={cluster}
-                            expanded={expandedIds.has(cluster.id)}
                             areaName={areaNameFor(cluster)}
                             distanceLabel={t("away", {
                               distance: formatDistanceKm(cluster.distanceKm),
                             })}
+                            nearby
                             now={now}
                             timeMessages={timeMessages}
-                            onToggle={() => toggleExpanded(cluster.id)}
+                            onOpenReports={() =>
+                              openClusterDrawer(cluster, {
+                                distanceLabel: t("away", {
+                                  distance: formatDistanceKm(
+                                    cluster.distanceKm,
+                                  ),
+                                }),
+                                nearby: true,
+                              })
+                            }
+                            onShowOnMap={onShowOnMap}
                             onSelectReport={onSelectReport}
                             t={t}
                             tCategories={tCategories}
@@ -640,25 +747,43 @@ export function ReportFeed({
                     </p>
                     <div className="bruit-grouped-list overflow-hidden">
                       <ul>
-                        {group.items.map((cluster, index) => (
-                          <li key={cluster.id}>
-                            {index > 0 ? (
-                              <div className="bruit-list-separator" />
-                            ) : null}
-                            <ClusterRow
-                              cluster={cluster}
-                              expanded={expandedIds.has(cluster.id)}
-                              areaName={areaNameFor(cluster)}
-                              now={now}
-                              timeMessages={timeMessages}
-                              onToggle={() => toggleExpanded(cluster.id)}
-                              onSelectReport={onSelectReport}
-                              t={t}
-                              tCategories={tCategories}
-                              tIntensities={tIntensities}
-                            />
-                          </li>
-                        ))}
+                        {group.items.map((cluster, index) => {
+                          const distanceLabel =
+                            typeof (cluster as NearbyCluster).distanceKm ===
+                            "number"
+                              ? t("away", {
+                                  distance: formatDistanceKm(
+                                    (cluster as NearbyCluster).distanceKm,
+                                  ),
+                                })
+                              : null;
+                          return (
+                            <li key={cluster.id}>
+                              {index > 0 ? (
+                                <div className="bruit-list-separator" />
+                              ) : null}
+                              <ClusterRow
+                                cluster={cluster}
+                                areaName={areaNameFor(cluster)}
+                                distanceLabel={distanceLabel}
+                                nearby={false}
+                                now={now}
+                                timeMessages={timeMessages}
+                                onOpenReports={() =>
+                                  openClusterDrawer(cluster, {
+                                    distanceLabel,
+                                    nearby: false,
+                                  })
+                                }
+                                onShowOnMap={onShowOnMap}
+                                onSelectReport={onSelectReport}
+                                t={t}
+                                tCategories={tCategories}
+                                tIntensities={tIntensities}
+                              />
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </section>
@@ -668,6 +793,17 @@ export function ReportFeed({
           )}
         </div>
       </div>
+
+      <ClusterDrawer
+        selection={clusterSelection}
+        container={container}
+        onClose={() => setClusterSelection(null)}
+        onSelectReport={(report) => {
+          const nearby = clusterSelection?.nearby ?? false;
+          setClusterSelection(null);
+          activateReport(report, nearby);
+        }}
+      />
     </section>
   );
 }
