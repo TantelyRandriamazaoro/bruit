@@ -1,16 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AboutSheet } from "@/components/AboutSheet";
 import { HelpContacts } from "@/components/HelpContacts";
+import { IncidentDrawer } from "@/components/IncidentDrawer";
 import { InsightsView } from "@/components/InsightsView";
 import { MapChrome } from "@/components/MapChrome";
 import { MapLoading } from "@/components/MapLoading";
+import { MeasureDrawer } from "@/components/MeasureDrawer";
 import { OpenInBrowserAlert } from "@/components/OpenInBrowserAlert";
 import { PoliceStationDrawer } from "@/components/PoliceStationDrawer";
-import { MeasureDrawer } from "@/components/MeasureDrawer";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
 import { TabBar, type AppTab } from "@/components/TabBar";
@@ -33,11 +35,22 @@ import {
   createNoiseReport,
   deleteNoiseReport,
   fetchMyReports,
+  fetchMyVerifications,
   fetchRecentReports,
   filterReportsSince,
+  verifyNoiseReport,
 } from "@/lib/reports";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import type { NoiseReport } from "@/lib/supabase/types";
+import type {
+  NoiseReport,
+  VerificationKind,
+} from "@/lib/supabase/types";
+import {
+  dismissVicinityCluster,
+  findVicinityIncident,
+  isVicinityDismissed,
+  type VicinityIncident,
+} from "@/lib/vicinity";
 import { hasSeenWelcome, markWelcomeSeen } from "@/lib/welcome";
 
 function hasDismissedInAppBrowserAlert(): boolean {
@@ -75,14 +88,19 @@ const configured = isSupabaseConfigured();
 
 export function HomeClient() {
   const t = useTranslations("Status");
+  const tCommon = useTranslations("Common");
   const [reports, setReports] = useState<NoiseReport[]>([]);
   const [myReports, setMyReports] = useState<NoiseReport[]>([]);
+  const [myVerifications, setMyVerifications] = useState<
+    Record<string, VerificationKind>
+  >({});
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [measureOpen, setMeasureOpen] = useState(false);
@@ -96,6 +114,11 @@ export function HomeClient() {
   const [inAppBrowserAlertOpen, setInAppBrowserAlertOpen] = useState(false);
   const [selectedPoliceStation, setSelectedPoliceStation] =
     useState<SelectedPoliceStation | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<NoiseReport | null>(
+    null,
+  );
+  const [vicinityContext, setVicinityContext] =
+    useState<VicinityIncident | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("map");
   const [mapApi, setMapApi] = useState<MapApi | null>(null);
   const [cooldownMs, setCooldownMs] = useState(0);
@@ -105,10 +128,12 @@ export function HomeClient() {
   const [shellEl, setShellEl] = useState<HTMLDivElement | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const policeDrawerOpen = selectedPoliceStation !== null;
+  const incidentOpen = selectedIncident !== null;
   const overlayOpen =
     drawerOpen ||
     measureOpen ||
     policeDrawerOpen ||
+    incidentOpen ||
     welcomeOpen ||
     inAppBrowserAlertOpen;
 
@@ -148,11 +173,20 @@ export function HomeClient() {
       const deviceId = getDeviceId();
       if (!deviceId) {
         setMyReports([]);
+        setMyVerifications({});
         return;
       }
 
-      const mine = await fetchMyReports(deviceId);
+      const [mine, verifications] = await Promise.all([
+        fetchMyReports(deviceId),
+        fetchMyVerifications(deviceId),
+      ]);
       setMyReports(mine);
+      const nextKinds: Record<string, VerificationKind> = {};
+      for (const item of verifications) {
+        nextKinds[item.report_id] = item.kind;
+      }
+      setMyVerifications(nextKinds);
     } catch (err) {
       console.error(err);
       setMyReports([]);
@@ -193,11 +227,24 @@ export function HomeClient() {
     }
     setStatus(null);
     setSelectedPoliceStation(null);
+    setSelectedIncident(null);
     setDrawerOpen(false);
     setMeasureOpen(false);
     setInAppBrowserAlertOpen(true);
     return true;
   }, [inAppBrowser]);
+
+  const patchReport = useCallback((next: NoiseReport) => {
+    setReports((prev) =>
+      prev.map((item) => (item.id === next.id ? { ...item, ...next } : item)),
+    );
+    setMyReports((prev) =>
+      prev.map((item) => (item.id === next.id ? { ...item, ...next } : item)),
+    );
+    setSelectedIncident((prev) =>
+      prev && prev.id === next.id ? { ...prev, ...next } : prev,
+    );
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -250,7 +297,7 @@ export function HomeClient() {
       return () => window.clearTimeout(timeout);
     }
 
-    navigator.geolocation.getCurrentPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setUserLocation({
           lat: pos.coords.latitude,
@@ -265,8 +312,14 @@ export function HomeClient() {
           setLocationError(t("locationUnavailable"));
         }
       },
-      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+      {
+        enableHighAccuracy: true,
+        timeout: 12_000,
+        maximumAge: 15_000,
+      },
     );
+
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [hydrated, inAppBrowser, t]);
 
   useEffect(() => {
@@ -302,6 +355,7 @@ export function HomeClient() {
 
     setStatus(null);
     setSelectedPoliceStation(null);
+    setSelectedIncident(null);
     setMeasureOpen(false);
     setReportSeedReading(seed ?? null);
     setDrawerOpen(true);
@@ -314,15 +368,38 @@ export function HomeClient() {
 
     setStatus(null);
     setSelectedPoliceStation(null);
+    setSelectedIncident(null);
     setDrawerOpen(false);
     setMeasureOpen(true);
   };
+
+  const openIncident = useCallback((report: NoiseReport) => {
+    setStatus(null);
+    setSelectedPoliceStation(null);
+    setDrawerOpen(false);
+    setMeasureOpen(false);
+    setAboutOpen(false);
+    setVicinityContext(null);
+    setSelectedIncident(report);
+  }, []);
+
+  const closeIncident = useCallback(() => {
+    if (verifyBusy || busy) {
+      return;
+    }
+    if (vicinityContext) {
+      dismissVicinityCluster(vicinityContext.clusterId);
+    }
+    setSelectedIncident(null);
+    setVicinityContext(null);
+  }, [busy, verifyBusy, vicinityContext]);
 
   const submitReport = async (details: {
     category: NoiseCategory;
     intensity: NoiseIntensity;
     dbAvg?: number | null;
     dbPeak?: number | null;
+    fromVicinity?: boolean;
   }) => {
     setBusy(true);
 
@@ -371,9 +448,14 @@ export function HomeClient() {
           setCooldownMs(getCooldownRemainingMs());
           setDrawerOpen(false);
           setReportSeedReading(null);
+          if (vicinityContext) {
+            dismissVicinityCluster(vicinityContext.clusterId);
+          }
+          setSelectedIncident(null);
+          setVicinityContext(null);
           setActiveTab("feed");
           setStatus({
-            message: t("reported"),
+            message: details.fromVicinity ? t("verifyHeard") : t("reported"),
             tone: "success",
           });
           void resolveAreaLabels([{ lat, lng }]);
@@ -416,6 +498,39 @@ export function HomeClient() {
     () => filterLiveMapReports(reports, now),
     [reports, now],
   );
+
+  const handleHearThis = () => {
+    if (!selectedIncident || busy) {
+      return;
+    }
+    if (requireExternalBrowser()) {
+      return;
+    }
+    if (cooldownMs > 0) {
+      setStatus({
+        message: t("rateLimited", {
+          minutes: Math.max(1, Math.ceil(cooldownMs / 1000 / 60)),
+        }),
+        tone: "error",
+      });
+      return;
+    }
+
+    const category = (vicinityContext?.category ??
+      selectedIncident.category ??
+      "other") as NoiseCategory;
+    const intensity = (vicinityContext?.intensity ??
+      selectedIncident.intensity ??
+      "loud") as NoiseIntensity;
+
+    void submitReport({
+      category,
+      intensity,
+      dbAvg: selectedIncident.db_avg,
+      dbPeak: selectedIncident.db_peak,
+      fromVicinity: Boolean(vicinityContext),
+    });
+  };
 
   const openHotspotOnMap = useCallback(
     (hotspot: { lat: number; lng: number }) => {
@@ -463,6 +578,9 @@ export function HomeClient() {
         const nextMine = myReports.filter((item) => item.id !== report.id);
         setMyReports(nextMine);
         setReports((prev) => prev.filter((item) => item.id !== report.id));
+        setSelectedIncident((prev) =>
+          prev?.id === report.id ? null : prev,
+        );
         syncCooldownFromMyReports(nextMine);
         setStatus({
           message: t("deleted"),
@@ -480,6 +598,227 @@ export function HomeClient() {
     },
     [configured, deletingReportId, myReports, syncCooldownFromMyReports, t],
   );
+
+  const myReportIds = useMemo(
+    () => new Set(myReports.map((report) => report.id)),
+    [myReports],
+  );
+
+  const submitVerification = useCallback(
+    async (params: {
+      reportId: string;
+      kind: VerificationKind;
+      lat: number;
+      lng: number;
+    }) => {
+      try {
+        const deviceId = getDeviceId();
+        if (!deviceId) {
+          setStatus({
+            message: t("verifyFailed"),
+            tone: "error",
+          });
+          return;
+        }
+
+        const result = await verifyNoiseReport({
+          deviceId,
+          reportId: params.reportId,
+          kind: params.kind,
+          lat: params.lat,
+          lng: params.lng,
+        });
+
+        if (!result.ok) {
+          const message =
+            result.error === "too_far"
+              ? t("verifyTooFar")
+              : result.error === "own_report"
+                ? t("verifyOwn")
+                : result.error === "report_too_old"
+                  ? t("verifyTooOld")
+                  : result.error === "rate_limited"
+                    ? t("verifyRateLimited")
+                    : t("verifyFailed");
+          setStatus({ message, tone: "error" });
+          return;
+        }
+
+        patchReport(result.report);
+        setMyVerifications((prev) => {
+          const next = { ...prev };
+          if (result.my_kind) {
+            next[params.reportId] = result.my_kind;
+          } else {
+            delete next[params.reportId];
+          }
+          return next;
+        });
+
+        const successMessage =
+          result.action === "cleared"
+            ? t("verifyCleared")
+            : result.my_kind === "hear"
+              ? t("verifyHeard")
+              : t("verifyQuiet");
+
+        // Quiet Now should dismiss like a completed action (and avoid re-prompt).
+        if (params.kind === "quiet" && result.action !== "cleared") {
+          if (vicinityContext) {
+            dismissVicinityCluster(vicinityContext.clusterId);
+          }
+          setSelectedIncident(null);
+          setVicinityContext(null);
+        }
+
+        setStatus({
+          message: successMessage,
+          tone: "success",
+        });
+
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(10);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus({
+          message: t("verifyFailed"),
+          tone: "error",
+        });
+      } finally {
+        setVerifyBusy(false);
+      }
+    },
+    [patchReport, t, vicinityContext],
+  );
+
+  const handleQuiet = useCallback(() => {
+    if (!configured || !selectedIncident || verifyBusy || busy) {
+      return;
+    }
+
+    if (requireExternalBrowser()) {
+      return;
+    }
+
+    const reportId = selectedIncident.id;
+    const kind: VerificationKind = "quiet";
+    const clearing = myVerifications[reportId] === kind;
+    setVerifyBusy(true);
+    setStatus(null);
+
+    if (clearing) {
+      const lat = userLocation?.lat ?? selectedIncident.lat;
+      const lng = userLocation?.lng ?? selectedIncident.lng;
+      void submitVerification({ reportId, kind, lat, lng });
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setVerifyBusy(false);
+      setStatus({
+        message: t("geoUnsupported"),
+        tone: "error",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserLocation({ lat, lng });
+        void submitVerification({ reportId, kind, lat, lng });
+      },
+      (err) => {
+        setVerifyBusy(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocationError(t("locationOff"));
+          setStatus({
+            message: t("verifyNeedLocation"),
+            tone: "error",
+          });
+        } else {
+          setStatus({
+            message: t("locationRetry"),
+            tone: "error",
+          });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 15_000 },
+    );
+  }, [
+    busy,
+    configured,
+    myVerifications,
+    requireExternalBrowser,
+    selectedIncident,
+    submitVerification,
+    t,
+    userLocation,
+    verifyBusy,
+  ]);
+
+  // Auto-show the incident card when walking into a live noisy area (~300 m).
+  useEffect(() => {
+    if (
+      !hydrated ||
+      !configured ||
+      inAppBrowser ||
+      welcomeOpen ||
+      inAppBrowserAlertOpen ||
+      drawerOpen ||
+      measureOpen ||
+      policeDrawerOpen ||
+      aboutOpen ||
+      busy ||
+      verifyBusy
+    ) {
+      return;
+    }
+
+    // Don't steal focus from a manually opened incident.
+    if (selectedIncident && !vicinityContext) {
+      return;
+    }
+
+    const nearest = findVicinityIncident({
+      reports: liveMapReports,
+      userLocation,
+      myReportIds,
+    });
+
+    if (!nearest || isVicinityDismissed(nearest.clusterId)) {
+      return;
+    }
+
+    if (
+      vicinityContext?.clusterId === nearest.clusterId &&
+      selectedIncident?.id === nearest.report.id
+    ) {
+      return;
+    }
+
+    setVicinityContext(nearest);
+    setSelectedIncident(nearest.report);
+  }, [
+    aboutOpen,
+    busy,
+    configured,
+    drawerOpen,
+    hydrated,
+    inAppBrowser,
+    inAppBrowserAlertOpen,
+    liveMapReports,
+    measureOpen,
+    myReportIds,
+    policeDrawerOpen,
+    selectedIncident,
+    userLocation,
+    verifyBusy,
+    vicinityContext,
+    welcomeOpen,
+  ]);
 
   const showMapChrome = activeTab === "map";
 
@@ -502,6 +841,7 @@ export function HomeClient() {
             setDrawerOpen(false);
             setMeasureOpen(false);
             setAboutOpen(false);
+            setSelectedIncident(null);
             setSelectedPoliceStation(station);
           }}
         />
@@ -514,10 +854,10 @@ export function HomeClient() {
           userLocation={userLocation}
           canReport={configured && cooldownMs <= 0}
           deletingReportId={deletingReportId}
+          container={shellEl}
           onReport={() => openDrawer()}
-          onSelectReport={(report) => {
-            openHotspotOnMap(report);
-          }}
+          onSelectReport={openIncident}
+          onShowOnMap={openHotspotOnMap}
           onDeleteReport={(report) => void handleDeleteReport(report)}
         />
       ) : null}
@@ -535,13 +875,24 @@ export function HomeClient() {
         <HelpContacts userLocation={userLocation} />
       ) : null}
 
-      {activeTab !== "map" ? (
-        <div className="pointer-events-none absolute right-3.5 top-0 z-20 pt-[max(0.7rem,env(safe-area-inset-top))]">
+      <div className="pointer-events-none absolute right-3.5 top-0 z-20 flex flex-col items-end gap-2.5 pt-[max(0.7rem,env(safe-area-inset-top))]">
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
+          <button
+            type="button"
+            onClick={() => setAboutOpen(true)}
+            className="bruit-rail-btn cursor-pointer"
+            aria-label={tCommon("settings")}
+            title={tCommon("settings")}
+          >
+            <Settings size={19} strokeWidth={1.85} aria-hidden />
+          </button>
+        </div>
+        {activeTab === "map" ? (
           <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
             <ThemeToggle />
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       <MapChrome
         reportCount={liveMapReports.length}
@@ -550,7 +901,6 @@ export function HomeClient() {
         onLocate={() => mapApi?.locate()}
         onZoomIn={() => mapApi?.zoomIn()}
         onZoomOut={() => mapApi?.zoomOut()}
-        onOpenAbout={() => setAboutOpen(true)}
       />
 
       {!configured && activeTab === "map" && !overlayOpen ? (
@@ -611,6 +961,35 @@ export function HomeClient() {
         station={selectedPoliceStation}
         container={shellEl}
         onClose={() => setSelectedPoliceStation(null)}
+      />
+
+      <IncidentDrawer
+        report={selectedIncident}
+        vicinity={Boolean(vicinityContext)}
+        reportCount={vicinityContext?.reportCount ?? 1}
+        myKind={
+          selectedIncident
+            ? (myVerifications[selectedIncident.id] ?? null)
+            : null
+        }
+        isOwnReport={
+          selectedIncident ? myReportIds.has(selectedIncident.id) : false
+        }
+        canReport={configured && cooldownMs <= 0}
+        userLocation={userLocation}
+        busy={verifyBusy || busy}
+        container={shellEl}
+        onClose={closeIncident}
+        onHearThis={handleHearThis}
+        onQuiet={handleQuiet}
+        onShowMap={(report) => {
+          if (vicinityContext) {
+            dismissVicinityCluster(vicinityContext.clusterId);
+          }
+          setSelectedIncident(null);
+          setVicinityContext(null);
+          openHotspotOnMap(report);
+        }}
       />
 
       <AboutSheet

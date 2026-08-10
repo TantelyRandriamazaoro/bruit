@@ -1,8 +1,7 @@
 "use client";
 
-import { Info, Minus, Navigation, Plus } from "lucide-react";
+import { Minus, Navigation, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { intensityShort } from "@/lib/i18n-helpers";
 import { HEAT_SCALE_GRADIENT, NOISE_INTENSITIES } from "@/lib/noise-meta";
 
@@ -13,7 +12,6 @@ type MapChromeProps = {
   onLocate: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onOpenAbout: () => void;
 };
 
 export function MapChrome({
@@ -23,7 +21,6 @@ export function MapChrome({
   onLocate,
   onZoomIn,
   onZoomOut,
-  onOpenAbout,
 }: MapChromeProps) {
   const t = useTranslations("Map");
   const tIntensities = useTranslations("Intensities");
@@ -79,23 +76,8 @@ export function MapChrome({
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-3.5 top-0 z-20 flex flex-col items-end gap-2.5 pt-[max(0.7rem,env(safe-area-inset-top))]">
-        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
-          <ThemeToggle />
-        </div>
-
-        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
-          <button
-            type="button"
-            onClick={onOpenAbout}
-            className="bruit-rail-btn cursor-pointer"
-            aria-label={t("about")}
-            title={t("aboutShort")}
-          >
-            <Info size={19} strokeWidth={1.85} aria-hidden />
-          </button>
-        </div>
-
+      {/* Sits below the persistent settings + theme rail (2×3rem + gaps). */}
+      <div className="pointer-events-none absolute right-3.5 top-0 z-20 flex flex-col items-end gap-2.5 pt-[calc(max(0.7rem,env(safe-area-inset-top))+7.25rem)]">
         <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <button
             type="button"

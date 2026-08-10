@@ -46,3 +46,42 @@ export function intensityWeight(
     NOISE_INTENSITIES.find((item) => item.id === intensity)?.weight ?? 0.75
   );
 }
+
+export function intensityTint(
+  intensity: NoiseIntensity | string | null | undefined,
+): string {
+  if (intensity && intensity in INTENSITY_TINT) {
+    return INTENSITY_TINT[intensity as NoiseIntensity];
+  }
+  return INTENSITY_TINT.loud;
+}
+
+/** Soft fill + matching icon color for list / sheet avatars. */
+export function intensityIconStyle(
+  intensity: NoiseIntensity | string | null | undefined,
+): { background: string; color: string } {
+  const tint = intensityTint(intensity);
+  return {
+    background: `color-mix(in srgb, ${tint} 16%, transparent)`,
+    color: tint,
+  };
+}
+
+/** Loudest intensity in a group — used for cluster avatar color. */
+export function loudestIntensity(
+  intensities: Array<NoiseIntensity | string | null | undefined>,
+): NoiseIntensity {
+  let best: NoiseIntensity = "loud";
+  let bestWeight = 0;
+  for (const intensity of intensities) {
+    const weight = intensityWeight(intensity);
+    if (weight > bestWeight) {
+      bestWeight = weight;
+      best =
+        intensity && intensity in INTENSITY_TINT
+          ? (intensity as NoiseIntensity)
+          : "loud";
+    }
+  }
+  return best;
+}

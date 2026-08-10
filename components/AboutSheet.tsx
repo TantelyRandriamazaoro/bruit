@@ -55,6 +55,7 @@ export function AboutSheet({
     t("bulletAnonymous"),
     t("bulletLiveMap"),
     t("bulletLingering"),
+    t("bulletVerify"),
   ];
 
   const setLocale = (next: AppLocale) => {
