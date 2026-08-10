@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { ChevronRight, Phone, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { formatDistanceKm } from "@/lib/format";
 import {
   formatPolicePhone,
   nearbyPoliceStations,
@@ -16,16 +17,6 @@ type HelpContactsProps = {
   hidden?: boolean;
   userLocation: { lat: number; lng: number } | null;
 };
-
-function formatDistance(km: number): string {
-  if (km < 1) {
-    return `${Math.max(50, Math.round(km * 1000))} m`;
-  }
-  if (km < 10) {
-    return `${km.toFixed(1)} km`;
-  }
-  return `${Math.round(km)} km`;
-}
 
 function TrailingButton({
   href,
@@ -74,7 +65,7 @@ function StationRow({
   const searchHref = policeGoogleSearchHref(station.name, phoneQuery);
   const phone = station.phone;
   const number = phone ? formatPolicePhone(phone) : null;
-  const distance = formatDistance(distanceKm);
+  const distance = formatDistanceKm(distanceKm);
 
   if (!phone) {
     return (

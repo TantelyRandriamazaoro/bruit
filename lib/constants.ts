@@ -3,6 +3,8 @@ export const COOLDOWN_MS = 30 * 60 * 1000;
 export const HEATMAP_DAYS = 7;
 /** Two windows of HEATMAP_DAYS for municipal week-over-week Insights */
 export const INSIGHTS_DAYS = HEATMAP_DAYS * 2;
+/** Activity “Nearby” radius — same scale as Help commissariats. */
+export const NEARBY_ACTIVITY_KM = 40;
 /** Area stays “live” for this long after its newest report. */
 export const LIVE_MAP_TTL_MS = 24 * 60 * 60 * 1000;
 /**

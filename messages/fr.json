@@ -116,9 +116,9 @@
   },
   "Feed": {
     "title": "Activité",
-    "subtitle": "Les signalements à proximité · 7 derniers jours",
+    "subtitle": "Près de vous, puis par région · 7 derniers jours",
     "emptyTitle": "Aucun signalement pour l’instant",
-    "emptyBody": "Les signalements de bruit à proximité apparaîtront ici.",
+    "emptyBody": "Les signalements apparaîtront ici — d’abord à proximité, puis par région.",
     "reportNoise": "Signaler un bruit",
     "lookingUpArea": "Recherche du lieu…",
     "reportsCount": "{count, plural, one {# signalement} other {# signalements}}",
@@ -127,6 +127,11 @@
     "myReports": "Mes signalements",
     "myReportsEmpty": "Les signalements de cet appareil apparaîtront ici.",
     "nearby": "À proximité",
+    "away": "à {distance}",
+    "locationOff": "Activez la localisation pour voir ce qui est à proximité.",
+    "noneNearby": "Aucun signalement dans un rayon d’environ 40 km.",
+    "byRegion": "Par région",
+    "elsewhere": "Ailleurs",
     "deleteReport": "Supprimer le signalement",
     "deleteConfirm": "Supprimer ce signalement ? Il disparaîtra de la carte et du fil d’activité.",
     "deleting": "Suppression…"

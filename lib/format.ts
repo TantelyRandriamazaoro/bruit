@@ -34,3 +34,14 @@ export function formatRelativeTime(
 export function formatCoordPair(lat: number, lng: number): string {
   return `${lat.toFixed(3)}°, ${lng.toFixed(3)}°`;
 }
+
+/** Compact distance for lists (Help, Activity). */
+export function formatDistanceKm(km: number): string {
+  if (km < 1) {
+    return `${Math.max(50, Math.round(km * 1000))} m`;
+  }
+  if (km < 10) {
+    return `${km.toFixed(1)} km`;
+  }
+  return `${Math.round(km)} km`;
+}

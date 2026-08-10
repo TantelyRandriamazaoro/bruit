@@ -487,6 +487,7 @@ export function HomeClient() {
         <ReportFeed
           reports={recentReports}
           myReports={myReports}
+          userLocation={userLocation}
           canReport={configured && cooldownMs <= 0}
           deletingReportId={deletingReportId}
           onReport={openDrawer}

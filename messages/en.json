@@ -116,9 +116,9 @@
   },
   "Feed": {
     "title": "Activity",
-    "subtitle": "Nearby reports · last 7 days",
+    "subtitle": "Near you, then by region · last 7 days",
     "emptyTitle": "No reports yet",
-    "emptyBody": "Noise reports near you will appear here.",
+    "emptyBody": "Noise reports will appear here — nearby first, then by region.",
     "reportNoise": "Report Noise",
     "lookingUpArea": "Finding location…",
     "reportsCount": "{count, plural, one {# report} other {# reports}}",
@@ -127,6 +127,11 @@
     "myReports": "My reports",
     "myReportsEmpty": "Reports from this device will appear here.",
     "nearby": "Nearby",
+    "away": "{distance} away",
+    "locationOff": "Turn on location to see what’s nearby.",
+    "noneNearby": "No reports within about 40 km.",
+    "byRegion": "By region",
+    "elsewhere": "Elsewhere",
     "deleteReport": "Delete report",
     "deleteConfirm": "Delete this report? It will be removed from the map and activity feed.",
     "deleting": "Deleting…"
