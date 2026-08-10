@@ -26,7 +26,7 @@ import {
   intensityLabel,
 } from "@/lib/i18n-helpers";
 import { decibelTint } from "@/lib/decibel";
-import type { NoiseIntensity } from "@/lib/noise-meta";
+import { INTENSITY_TINT } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
 const HotspotMiniMap = dynamic(
@@ -54,12 +54,6 @@ const STATUS_TONE: Record<HotspotStatus, string> = {
   active: "bruit-status-active",
 };
 
-const INTENSITY_TINT: Record<NoiseIntensity, string> = {
-  moderate: "#5ac8fa",
-  loud: "#32ade6",
-  very_loud: "#ff9f0a",
-  extreme: "#ff2d55",
-};
 
 function Chevron() {
   return (
