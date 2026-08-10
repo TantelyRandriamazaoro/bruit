@@ -4,7 +4,7 @@ import { Info, Minus, Navigation, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { intensityShort } from "@/lib/i18n-helpers";
-import { NOISE_INTENSITIES } from "@/lib/noise-meta";
+import { HEAT_SCALE_GRADIENT, NOISE_INTENSITIES } from "@/lib/noise-meta";
 
 type MapChromeProps = {
   reportCount: number;
@@ -58,7 +58,10 @@ export function MapChrome({
           </div>
 
           <div className="bruit-noise-legend-scale" aria-hidden>
-            <div className="bruit-heat-scale bruit-noise-legend-bar" />
+            <div
+              className="bruit-heat-scale bruit-noise-legend-bar"
+              style={{ background: HEAT_SCALE_GRADIENT }}
+            />
             <div className="bruit-noise-legend-ticks">
               {NOISE_INTENSITIES.map((level) => (
                 <span key={level.id} className="bruit-noise-legend-tick" />
