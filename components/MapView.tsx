@@ -113,10 +113,10 @@ function addNoiseHeatLayer(
   });
 
   const visibility = heatmapVisible ? "visible" : "none";
-  // Pixel radius for a ~150 m loud kernel near Antananarivo (~18.9°S).
-  // Exponential zoom keeps that meter footprint stable while panning zoom.
-  const loudRadiusPxAtZ12 = 4.2;
-  const loudRadiusPxAtZ17 = loudRadiusPxAtZ12 * 2 ** 5; // 134.4
+  // Loud baseline ≈ 150 m at DEFAULT_CENTER / DEFAULT_ZOOM
+  // (Antananarivo z15 ≈ 4.5 m/px → ~33 px). Zoomed-out sizes stay
+  // screen-readable; past default zoom, grow toward meter-stable.
+  const loudRadiusPxAtDefaultZoom = 33;
   const sharedPaint = {
     "heatmap-weight": ["coalesce", ["get", "weight"], 0.75] as [
       "coalesce",
@@ -127,10 +127,10 @@ function addNoiseHeatLayer(
       "interpolate",
       ["linear"],
       ["zoom"],
-      12,
-      0.85,
-      15,
-      1.15,
+      10,
+      0.55,
+      DEFAULT_ZOOM,
+      1.25,
     ] as [
       "interpolate",
       ["linear"],
@@ -140,19 +140,26 @@ function addNoiseHeatLayer(
       number,
       number,
     ],
-    // Meter-stable kernel: doubles each zoom level, scaled by loudness.
     "heatmap-radius": [
       "interpolate",
-      ["exponential", 2],
+      ["linear"],
       ["zoom"],
-      12,
-      ["*", loudRadiusPxAtZ12, ["coalesce", ["get", "radius"], 1]],
-      17,
-      ["*", loudRadiusPxAtZ17, ["coalesce", ["get", "radius"], 1]],
+      10,
+      ["*", 30, ["coalesce", ["get", "radius"], 1]],
+      DEFAULT_ZOOM,
+      ["*", loudRadiusPxAtDefaultZoom, ["coalesce", ["get", "radius"], 1]],
+      DEFAULT_ZOOM + 2,
+      [
+        "*",
+        loudRadiusPxAtDefaultZoom * 4,
+        ["coalesce", ["get", "radius"], 1],
+      ],
     ] as unknown as [
       "interpolate",
-      ["exponential", number],
+      ["linear"],
       ["zoom"],
+      number,
+      number,
       number,
       number,
       number,
@@ -162,12 +169,10 @@ function addNoiseHeatLayer(
   };
 
   // Cool under hot so fresh activity stays visually on top.
-  // Hidden below z12: a 100–300 m incident is only a few pixels city-wide.
   map.addLayer({
     id: "noise-heat-cool",
     type: "heatmap",
     source: "noise-reports",
-    minzoom: 12,
     maxzoom: 18,
     filter: ["==", ["get", "hot"], 0],
     layout: { visibility },
@@ -186,7 +191,6 @@ function addNoiseHeatLayer(
     id: "noise-heat-hot",
     type: "heatmap",
     source: "noise-reports",
-    minzoom: 12,
     maxzoom: 18,
     filter: ["==", ["get", "hot"], 1],
     layout: { visibility },
