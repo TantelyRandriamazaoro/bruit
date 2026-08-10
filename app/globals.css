@@ -1124,6 +1124,144 @@ body {
   transform: scale(0.985);
 }
 
+/* iOS UIAlertController–style interstitial */
+.bruit-alert-root {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1.25rem
+    max(1rem, env(safe-area-inset-bottom));
+  animation: bruit-fade-in 180ms ease;
+}
+
+.bruit-alert-scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.32);
+  cursor: pointer;
+}
+
+.dark .bruit-alert-scrim {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.bruit-alert {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 16.75rem); /* ~268pt system alert width */
+  overflow: hidden;
+  border-radius: 1.125rem;
+  background: rgba(245, 245, 247, 0.94);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  animation: bruit-alert-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dark .bruit-alert {
+  background: rgba(44, 44, 46, 0.94);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.55);
+}
+
+.bruit-alert-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.35rem 1.15rem 1rem;
+  text-align: center;
+}
+
+.bruit-alert-symbol {
+  display: inline-flex;
+  color: #007aff;
+  margin-bottom: 0.55rem;
+}
+
+.dark .bruit-alert-symbol {
+  color: #0a84ff;
+}
+
+.bruit-alert-title {
+  max-width: 13.5rem;
+  font-size: 1.0625rem; /* ~17pt */
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--bruit-ink);
+}
+
+.bruit-alert-message {
+  margin-top: 0.4rem;
+  max-width: 14rem;
+  font-size: 0.8125rem; /* ~13pt */
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--bruit-ink);
+}
+
+.bruit-alert-hint {
+  margin-top: 0.55rem;
+  max-width: 14rem;
+  font-size: 0.75rem; /* ~12pt */
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--bruit-muted);
+}
+
+.bruit-alert-actions {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.5px solid var(--bruit-hairline);
+}
+
+.bruit-alert-action {
+  display: flex;
+  min-height: 2.75rem; /* ~44pt */
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #007aff;
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  transition: background-color 140ms ease;
+}
+
+.bruit-alert-action + .bruit-alert-action {
+  border-top: 0.5px solid var(--bruit-hairline);
+}
+
+.dark .bruit-alert-action {
+  color: #0a84ff;
+}
+
+.bruit-alert-action--primary {
+  font-weight: 600;
+}
+
+.bruit-alert-action:enabled:active {
+  background: var(--bruit-row-active);
+}
+
+@keyframes bruit-alert-in {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Apple Maps-style floating place card */
 .bruit-place-drawer {
   left: 0.55rem;
@@ -1685,6 +1823,9 @@ body {
   .bruit-history-slot-bar,
   .bruit-day-rhythm-bar,
   .bruit-welcome-continue,
+  .bruit-alert-root,
+  .bruit-alert,
+  .bruit-alert-action,
   .bruit-toast,
   .bruit-meter-ring-progress,
   .bruit-meter-bar,

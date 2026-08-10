@@ -8,6 +8,7 @@ import { HelpContacts } from "@/components/HelpContacts";
 import { InsightsView } from "@/components/InsightsView";
 import { MapChrome } from "@/components/MapChrome";
 import { MapLoading } from "@/components/MapLoading";
+import { OpenInBrowserAlert } from "@/components/OpenInBrowserAlert";
 import { PoliceStationDrawer } from "@/components/PoliceStationDrawer";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
@@ -16,12 +17,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { WelcomeDrawer } from "@/components/WelcomeDrawer";
 import type { MapApi } from "@/components/MapView";
 import { resolveAreaLabels } from "@/lib/area-labels";
+import { IN_APP_BROWSER_ALERT_DISMISSED_KEY } from "@/lib/constants";
 import {
   clearLastReportAt,
   getCooldownRemainingMs,
   setLastReportAt,
 } from "@/lib/cooldown";
 import { getDeviceId } from "@/lib/device-id";
+import { isInAppBrowser } from "@/lib/in-app-browser";
 import type { NoiseCategory, NoiseIntensity } from "@/lib/noise-meta";
 import { filterLiveMapReports } from "@/lib/live-map";
 import type { SelectedPoliceStation } from "@/lib/police-stations";
@@ -35,6 +38,22 @@ import {
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { NoiseReport } from "@/lib/supabase/types";
 import { hasSeenWelcome, markWelcomeSeen } from "@/lib/welcome";
+
+function hasDismissedInAppBrowserAlert(): boolean {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  return (
+    window.sessionStorage.getItem(IN_APP_BROWSER_ALERT_DISMISSED_KEY) === "1"
+  );
+}
+
+function markInAppBrowserAlertDismissed(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(IN_APP_BROWSER_ALERT_DISMISSED_KEY, "1");
+}
 
 const MapView = dynamic(
   () => import("@/components/MapView").then((m) => m.MapView),
@@ -67,6 +86,8 @@ export function HomeClient() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [inAppBrowser, setInAppBrowser] = useState(false);
+  const [inAppBrowserAlertOpen, setInAppBrowserAlertOpen] = useState(false);
   const [selectedPoliceStation, setSelectedPoliceStation] =
     useState<SelectedPoliceStation | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("map");
@@ -78,7 +99,11 @@ export function HomeClient() {
   const [shellEl, setShellEl] = useState<HTMLDivElement | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const policeDrawerOpen = selectedPoliceStation !== null;
-  const overlayOpen = drawerOpen || policeDrawerOpen || welcomeOpen;
+  const overlayOpen =
+    drawerOpen ||
+    policeDrawerOpen ||
+    welcomeOpen ||
+    inAppBrowserAlertOpen;
 
   const syncCooldownFromMyReports = useCallback((mine: NoiseReport[]) => {
     const newest = mine[0];
@@ -130,9 +155,13 @@ export function HomeClient() {
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setCooldownMs(getCooldownRemainingMs());
+      const trapped = isInAppBrowser();
+      setInAppBrowser(trapped);
       setHydrated(true);
       if (!hasSeenWelcome()) {
         setWelcomeOpen(true);
+      } else if (trapped && !hasDismissedInAppBrowserAlert()) {
+        setInAppBrowserAlertOpen(true);
       }
     });
     return () => window.cancelAnimationFrame(frame);
@@ -141,7 +170,26 @@ export function HomeClient() {
   const dismissWelcome = useCallback(() => {
     markWelcomeSeen();
     setWelcomeOpen(false);
+    if (isInAppBrowser() && !hasDismissedInAppBrowserAlert()) {
+      setInAppBrowserAlertOpen(true);
+    }
   }, []);
+
+  const dismissInAppBrowserAlert = useCallback(() => {
+    markInAppBrowserAlertDismissed();
+    setInAppBrowserAlertOpen(false);
+  }, []);
+
+  const requireExternalBrowser = useCallback(() => {
+    if (!inAppBrowser) {
+      return false;
+    }
+    setStatus(null);
+    setSelectedPoliceStation(null);
+    setDrawerOpen(false);
+    setInAppBrowserAlertOpen(true);
+    return true;
+  }, [inAppBrowser]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -179,6 +227,14 @@ export function HomeClient() {
       return;
     }
 
+    // Facebook / Instagram webviews rarely grant location — skip the prompt.
+    if (inAppBrowser) {
+      const timeout = window.setTimeout(() => {
+        setLocationError(null);
+      }, 0);
+      return () => window.clearTimeout(timeout);
+    }
+
     if (!navigator.geolocation) {
       const timeout = window.setTimeout(() => {
         setLocationError(t("geoUnsupported"));
@@ -203,7 +259,7 @@ export function HomeClient() {
       },
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
     );
-  }, [hydrated, t]);
+  }, [hydrated, inAppBrowser, t]);
 
   useEffect(() => {
     if (activeTab !== "map") {
@@ -221,6 +277,10 @@ export function HomeClient() {
         message: t("missingEnv"),
         tone: "error",
       });
+      return;
+    }
+
+    if (requireExternalBrowser()) {
       return;
     }
 
@@ -528,6 +588,11 @@ export function HomeClient() {
         open={welcomeOpen}
         container={shellEl}
         onClose={dismissWelcome}
+      />
+
+      <OpenInBrowserAlert
+        open={inAppBrowserAlertOpen && !welcomeOpen}
+        onDismiss={dismissInAppBrowserAlert}
       />
     </div>
   );

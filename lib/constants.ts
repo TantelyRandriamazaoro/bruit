@@ -13,6 +13,9 @@ export const LIVE_MAP_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const DEVICE_ID_KEY = "bruit_device_id";
 export const LAST_REPORT_AT_KEY = "bruit_last_report_at";
 export const WELCOME_SEEN_KEY = "bruit_welcome_seen";
+/** Session dismiss for the in-app browser “open externally” alert. */
+export const IN_APP_BROWSER_ALERT_DISMISSED_KEY =
+  "bruit_in_app_browser_alert_dismissed";
 /** Session-scoped cache of reverse-geocoded area cell → display name. */
 export const AREA_LABELS_SESSION_KEY = "bruit_area_labels";
 

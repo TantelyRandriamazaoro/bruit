@@ -276,6 +276,22 @@
     "featureAnonymousBody": "Reports use a private device ID, never your name.",
     "continue": "Continue"
   },
+  "OpenInBrowser": {
+    "titleSafari": "Open in Safari",
+    "titleChrome": "Open in Chrome",
+    "titleBrowser": "Open in Browser",
+    "messageSafari": "Location isn’t available in this browser. Open this page in Safari to report nearby noise.",
+    "messageChrome": "Location isn’t available in this browser. Open this page in Chrome to report nearby noise.",
+    "messageBrowser": "Location isn’t available in this browser. Open this page in your browser to report nearby noise.",
+    "hintSafari": "Or tap ··· at the bottom, then Open in Safari.",
+    "hintChrome": "Or tap ⋮ in the menu, then Open in Chrome.",
+    "hintBrowser": "Or use the menu to open this page in your browser.",
+    "openSafari": "Open in Safari",
+    "openChrome": "Open in Chrome",
+    "openBrowser": "Open in Browser",
+    "notNow": "Not Now",
+    "dismiss": "Dismiss"
+  },
   "Map": {
     "loading": "Loading map…",
     "failed": "Map failed to load.",

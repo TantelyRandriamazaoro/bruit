@@ -276,6 +276,22 @@
     "featureAnonymousBody": "Vos signalements ne contiennent ni votre nom ni votre compte.",
     "continue": "Continuer"
   },
+  "OpenInBrowser": {
+    "titleSafari": "Ouvrir dans Safari",
+    "titleChrome": "Ouvrir dans Chrome",
+    "titleBrowser": "Ouvrir dans le navigateur",
+    "messageSafari": "La localisation n’est pas disponible dans ce navigateur. Ouvrez cette page dans Safari pour signaler un bruit à proximité.",
+    "messageChrome": "La localisation n’est pas disponible dans ce navigateur. Ouvrez cette page dans Chrome pour signaler un bruit à proximité.",
+    "messageBrowser": "La localisation n’est pas disponible dans ce navigateur. Ouvrez cette page dans votre navigateur pour signaler un bruit à proximité.",
+    "hintSafari": "Ou touchez ··· en bas, puis Ouvrir dans Safari.",
+    "hintChrome": "Ou touchez ⋮ dans le menu, puis Ouvrir dans Chrome.",
+    "hintBrowser": "Ou utilisez le menu pour ouvrir cette page dans votre navigateur.",
+    "openSafari": "Ouvrir dans Safari",
+    "openChrome": "Ouvrir dans Chrome",
+    "openBrowser": "Ouvrir dans le navigateur",
+    "notNow": "Plus tard",
+    "dismiss": "Fermer"
+  },
   "Map": {
     "loading": "Chargement de la carte…",
     "failed": "Échec du chargement de la carte.",
