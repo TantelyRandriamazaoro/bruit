@@ -16,12 +16,22 @@ export async function fetchRecentReports(
 
   const { data, error } = await getSupabase()
     .from("noise_reports")
-    .select("id, lat, lng, category, intensity, created_at")
+    .select("id, lat, lng, category, intensity, db_avg, db_peak, created_at")
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false });
 
   if (error) {
-    // Fallback if migration 0002 is not applied yet
+    // Fallback if migration 0005 (or 0002) is not applied yet
+    const withDetails = await getSupabase()
+      .from("noise_reports")
+      .select("id, lat, lng, category, intensity, created_at")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (!withDetails.error) {
+      return withDetails.data ?? [];
+    }
+
     const legacy = await getSupabase()
       .from("noise_reports")
       .select("id, lat, lng, created_at")
@@ -56,8 +66,25 @@ export async function createNoiseReport(params: {
   lng: number;
   category: NoiseCategory;
   intensity: NoiseIntensity;
+  dbAvg?: number | null;
+  dbPeak?: number | null;
 }): Promise<CreateNoiseReportResult> {
-  const { data, error } = await getSupabase().rpc("create_noise_report", {
+  const withDb = await getSupabase().rpc("create_noise_report", {
+    p_device_id: params.deviceId,
+    p_lat: params.lat,
+    p_lng: params.lng,
+    p_category: params.category,
+    p_intensity: params.intensity,
+    p_db_avg: params.dbAvg ?? null,
+    p_db_peak: params.dbPeak ?? null,
+  });
+
+  if (!withDb.error) {
+    return withDb.data as CreateNoiseReportResult;
+  }
+
+  // Fallback if migration 0005 is not applied yet
+  const legacy = await getSupabase().rpc("create_noise_report", {
     p_device_id: params.deviceId,
     p_lat: params.lat,
     p_lng: params.lng,
@@ -65,11 +92,11 @@ export async function createNoiseReport(params: {
     p_intensity: params.intensity,
   });
 
-  if (error) {
-    throw error;
+  if (legacy.error) {
+    throw withDb.error;
   }
 
-  return data as CreateNoiseReportResult;
+  return legacy.data as CreateNoiseReportResult;
 }
 
 export async function fetchMyReports(

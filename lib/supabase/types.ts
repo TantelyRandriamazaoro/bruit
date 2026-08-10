@@ -6,6 +6,8 @@ export type NoiseReport = {
   lng: number;
   category?: NoiseCategory | string | null;
   intensity?: NoiseIntensity | string | null;
+  db_avg?: number | null;
+  db_peak?: number | null;
   created_at: string;
 };
 
@@ -82,6 +84,8 @@ export type Database = {
           lng: number;
           category: string;
           intensity: string;
+          db_avg: number | null;
+          db_peak: number | null;
           created_at: string;
         };
         Insert: {
@@ -91,6 +95,8 @@ export type Database = {
           lng: number;
           category?: string;
           intensity?: string;
+          db_avg?: number | null;
+          db_peak?: number | null;
           created_at?: string;
         };
         Update: {
@@ -100,6 +106,8 @@ export type Database = {
           lng?: number;
           category?: string;
           intensity?: string;
+          db_avg?: number | null;
+          db_peak?: number | null;
           created_at?: string;
         };
         Relationships: [];
@@ -133,6 +141,8 @@ export type Database = {
           p_lng: number;
           p_category?: string;
           p_intensity?: string;
+          p_db_avg?: number | null;
+          p_db_peak?: number | null;
         };
         Returns: CreateNoiseReportResult;
       };

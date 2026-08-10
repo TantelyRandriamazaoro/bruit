@@ -12,7 +12,7 @@ Map app for reporting loud noise and viewing a noise-pollution heatmap.
 
 - Full-bleed live heatmap (areas stay active ~6h; Insights keep 7-day trends)
 - Apple Maps–style light basemap (Carto Positron) and frosted chrome
-- Report drawer for **type** + **how loud** before submitting
+- Report drawer for **type**, **mic measure (dB)**, and **how loud** before submitting
 - One report every **30 minutes** per device (`localStorage` device ID)
 - Server-side cooldown in Postgres (direct inserts are revoked)
 
@@ -44,6 +44,8 @@ In the Supabase SQL editor for the Bruit project, run in order:
 1. [`supabase/migrations/0001_noise_reports.sql`](supabase/migrations/0001_noise_reports.sql)
 2. [`supabase/migrations/0002_report_details.sql`](supabase/migrations/0002_report_details.sql)
 3. [`supabase/migrations/0003_area_labels.sql`](supabase/migrations/0003_area_labels.sql)
+4. [`supabase/migrations/0004_my_reports.sql`](supabase/migrations/0004_my_reports.sql)
+5. [`supabase/migrations/0005_decibel_readings.sql`](supabase/migrations/0005_decibel_readings.sql)
 
 Or with the CLI linked to the Bruit project:
 
