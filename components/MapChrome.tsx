@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, LocateFixed, Minus, Plus } from "lucide-react";
+import { Info, Minus, Navigation, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { intensityShort } from "@/lib/i18n-helpers";
@@ -81,15 +81,17 @@ export function MapChrome({
           <ThemeToggle />
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenAbout}
-          className="bruit-chrome bruit-rail-btn pointer-events-auto cursor-pointer"
-          aria-label={t("about")}
-          title={t("aboutShort")}
-        >
-          <Info size={19} strokeWidth={1.85} aria-hidden />
-        </button>
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
+          <button
+            type="button"
+            onClick={onOpenAbout}
+            className="bruit-rail-btn cursor-pointer"
+            aria-label={t("about")}
+            title={t("aboutShort")}
+          >
+            <Info size={19} strokeWidth={1.85} aria-hidden />
+          </button>
+        </div>
 
         <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
           <button
@@ -111,16 +113,24 @@ export function MapChrome({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onLocate}
-          disabled={!canLocate}
-          className="bruit-chrome bruit-rail-btn pointer-events-auto cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label={t("locate")}
-          title={t("myLocation")}
-        >
-          <LocateFixed size={19} strokeWidth={1.85} aria-hidden />
-        </button>
+        <div className="bruit-chrome pointer-events-auto overflow-hidden rounded-[1.05rem]">
+          <button
+            type="button"
+            onClick={onLocate}
+            disabled={!canLocate}
+            className="bruit-rail-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={t("locate")}
+            title={t("myLocation")}
+          >
+            <Navigation
+              size={28}
+              fill="var(--bruit-accent)"
+              color="var(--bruit-accent)"
+              strokeWidth={0}
+              aria-hidden
+            />
+          </button>
+        </div>
       </div>
     </>
   );
