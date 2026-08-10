@@ -2,8 +2,10 @@
 
 import { Check, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Drawer } from "vaul";
+import { NoiseMeter } from "@/components/NoiseMeter";
+import { intensityFromDb } from "@/lib/decibel";
 import { NoiseCategoryIcon } from "@/lib/noise-icons";
 import {
   NOISE_CATEGORIES,
@@ -21,6 +23,8 @@ type ReportDrawerProps = {
   onSubmit: (details: {
     category: NoiseCategory;
     intensity: NoiseIntensity;
+    dbAvg?: number | null;
+    dbPeak?: number | null;
   }) => void;
 };
 
@@ -39,6 +43,39 @@ export function ReportDrawer({
   const descriptionId = useId();
   const [category, setCategory] = useState<NoiseCategory>("traffic");
   const [intensity, setIntensity] = useState<NoiseIntensity>("loud");
+  const [dbAvg, setDbAvg] = useState<number | null>(null);
+  const [dbPeak, setDbPeak] = useState<number | null>(null);
+  const [intensityTouched, setIntensityTouched] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      setCategory("traffic");
+      setIntensity("loud");
+      setDbAvg(null);
+      setDbPeak(null);
+      setIntensityTouched(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
+  const handleReadingChange = useCallback(
+    (reading: { avgDb: number; peakDb: number } | null) => {
+      if (!reading) {
+        setDbAvg(null);
+        setDbPeak(null);
+        return;
+      }
+      setDbAvg(reading.avgDb);
+      setDbPeak(reading.peakDb);
+      if (!intensityTouched) {
+        setIntensity(intensityFromDb(reading.peakDb));
+      }
+    },
+    [intensityTouched],
+  );
 
   return (
     <Drawer.Root
@@ -119,6 +156,14 @@ export function ReportDrawer({
               })}
             </div>
 
+            <div className="mt-5">
+              <NoiseMeter
+                active={open}
+                busy={busy}
+                onReadingChange={handleReadingChange}
+              />
+            </div>
+
             <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
               {t("howLoud")}
             </p>
@@ -132,7 +177,10 @@ export function ReportDrawer({
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => setIntensity(item.id)}
+                      onClick={() => {
+                        setIntensityTouched(true);
+                        setIntensity(item.id);
+                      }}
                       className="bruit-intensity-row"
                     >
                       <span>
@@ -166,7 +214,14 @@ export function ReportDrawer({
             <button
               type="button"
               disabled={busy}
-              onClick={() => onSubmit({ category, intensity })}
+              onClick={() =>
+                onSubmit({
+                  category,
+                  intensity,
+                  dbAvg,
+                  dbPeak,
+                })
+              }
               className="bruit-primary-btn w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy ? t("sending") : t("submit")}

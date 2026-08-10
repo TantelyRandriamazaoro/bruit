@@ -1281,6 +1281,214 @@ body {
   transform: scale(0.985);
 }
 
+.bruit-noise-meter {
+  overflow: hidden;
+  border-radius: 1.15rem;
+  border: 0.5px solid var(--bruit-hairline);
+  background: var(--bruit-surface-elevated);
+  padding: 1rem 1rem 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.bruit-meter-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0 0.35rem;
+}
+
+.bruit-meter-ring-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+}
+
+.bruit-meter-ring {
+  position: absolute;
+  inset: 0;
+}
+
+.bruit-meter-ring-progress {
+  transition: stroke-dasharray 160ms ease-out, stroke 160ms ease-out;
+}
+
+.bruit-meter-readout {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.bruit-meter-value {
+  font-size: 2.75rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--bruit-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bruit-meter-unit {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bruit-muted);
+}
+
+.bruit-meter-band {
+  margin-top: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--bruit-ink);
+}
+
+.bruit-meter-wave {
+  display: flex;
+  height: 2.1rem;
+  width: min(100%, 16rem);
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+}
+
+.bruit-meter-bar {
+  display: block;
+  width: 0.22rem;
+  height: 100%;
+  transform-origin: center;
+  border-radius: 999px;
+  background: var(--bruit-hairline-strong);
+  transition: transform 90ms ease-out, background-color 160ms ease, opacity 160ms ease;
+  will-change: transform;
+}
+
+.bruit-meter-actions {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.bruit-meter-record-btn {
+  display: inline-flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: var(--bruit-danger);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(215, 0, 21, 0.22);
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.bruit-meter-record-btn:enabled:active {
+  transform: scale(0.96);
+}
+
+.bruit-meter-record-btn-stop {
+  background: var(--bruit-ink);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.dark .bruit-meter-record-btn-stop {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.bruit-meter-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--bruit-fill);
+  color: var(--bruit-ink);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background-color 150ms ease;
+}
+
+.bruit-meter-ghost-btn:hover {
+  background: var(--bruit-row-hover);
+}
+
+.bruit-meter-stats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--bruit-muted);
+}
+
+.bruit-meter-stats strong {
+  font-weight: 700;
+  color: var(--bruit-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bruit-meter-stats-sep {
+  color: var(--bruit-hairline-strong);
+}
+
+.bruit-meter-footnote {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--bruit-muted);
+}
+
+.bruit-db-card {
+  overflow: hidden;
+  border-radius: 1.05rem;
+  border: 0.5px solid var(--bruit-hairline);
+  background: var(--bruit-surface);
+  padding: 1rem 1.05rem 0.95rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.bruit-db-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.bruit-db-card-value {
+  margin-top: 0.2rem;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bruit-db-card-unit {
+  margin-left: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bruit-muted);
+}
+
+.bruit-db-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 1rem;
+  border-radius: 0.95rem;
+  background: var(--bruit-row-nested);
+  padding: 0.85rem 0.95rem;
+}
+
 .bruit-map {
   position: absolute;
   inset: 0;
@@ -1477,7 +1685,10 @@ body {
   .bruit-history-slot-bar,
   .bruit-day-rhythm-bar,
   .bruit-welcome-continue,
-  .bruit-toast {
+  .bruit-toast,
+  .bruit-meter-ring-progress,
+  .bruit-meter-bar,
+  .bruit-meter-record-btn {
     animation: none !important;
     transition: none !important;
   }

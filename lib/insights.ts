@@ -1,6 +1,11 @@
 import { HEATMAP_DAYS, INSIGHTS_DAYS } from "@/lib/constants";
 import { clusterNearbyReports } from "@/lib/cluster-reports";
 import {
+  averageDb,
+  measuredCount,
+  peakDbAmong,
+} from "@/lib/decibel";
+import {
   NOISE_CATEGORIES,
   NOISE_INTENSITIES,
   intensityWeight,
@@ -43,6 +48,9 @@ export type NoiseHotspot = {
   topCategory: HotspotCategoryShare | null;
   categories: HotspotCategoryShare[];
   peakHourLabel: string | null;
+  avgDb: number | null;
+  peakDb: number | null;
+  measuredCount: number;
 };
 
 export type TimeMatrixCell = {
@@ -93,6 +101,9 @@ export type HotspotDetailInsights = {
   days: DayBarInsight[];
   intensities: IntensityShare[];
   loudShare: number;
+  avgDb: number | null;
+  peakDb: number | null;
+  measuredCount: number;
 };
 
 export type MunicipalInsights = {
@@ -119,6 +130,9 @@ export type MunicipalInsights = {
     slotLabel: string;
     value: number;
   } | null;
+  avgDb: number | null;
+  peakDb: number | null;
+  measuredCount: number;
 };
 
 const WEEKDAY_KEYS = ["0", "1", "2", "3", "4", "5", "6"] as const;
@@ -320,6 +334,8 @@ function buildHotspot(
     distinctDays,
     previousDistinctDays,
   });
+  const dbSource =
+    reportsCurrent.length > 0 ? reportsCurrent : cluster.reports;
 
   return {
     id: cluster.id,
@@ -343,6 +359,9 @@ function buildHotspot(
       reportsCurrent.length > 0 ? reportsCurrent : cluster.reports,
       locale,
     ),
+    avgDb: averageDb(dbSource),
+    peakDb: peakDbAmong(dbSource),
+    measuredCount: measuredCount(dbSource),
   };
 }
 
@@ -474,6 +493,9 @@ export type ScopedReportInsights = {
   loudShare: number;
   peakHourLabel: string | null;
   topCategory: HotspotCategoryShare | null;
+  avgDb: number | null;
+  peakDb: number | null;
+  measuredCount: number;
 };
 
 export type InsightLabelMessages = {
@@ -502,6 +524,9 @@ export function buildScopedReportInsights(
     loudShare: total > 0 ? loudCount / total : 0,
     peakHourLabel: peakHourFor(reports, locale),
     topCategory: categories[0] ?? null,
+    avgDb: averageDb(reports),
+    peakDb: peakDbAmong(reports),
+    measuredCount: measuredCount(reports),
   };
 }
 
@@ -554,6 +579,9 @@ export function buildHotspotDetail(
     days: buildDayBars(scoped, now, locale, labels?.today ?? "Today"),
     intensities,
     loudShare: total > 0 ? loudCount / total : 0,
+    avgDb: averageDb(scoped.length > 0 ? scoped : hotspot.reports),
+    peakDb: peakDbAmong(scoped.length > 0 ? scoped : hotspot.reports),
+    measuredCount: measuredCount(scoped.length > 0 ? scoped : hotspot.reports),
   };
 }
 
@@ -647,5 +675,8 @@ export function buildMunicipalInsights(
     timeMatrix: matrix.cells,
     timeMatrixMax: matrix.max,
     peakWindow: matrix.peak,
+    avgDb: averageDb(currentReports),
+    peakDb: peakDbAmong(currentReports),
+    measuredCount: measuredCount(currentReports),
   };
 }

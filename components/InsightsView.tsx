@@ -25,6 +25,7 @@ import {
   hotspotStatusLabel,
   intensityLabel,
 } from "@/lib/i18n-helpers";
+import { decibelTint } from "@/lib/decibel";
 import type { NoiseIntensity } from "@/lib/noise-meta";
 import type { NoiseReport } from "@/lib/supabase/types";
 
@@ -293,6 +294,57 @@ function HotspotDetail({
               </p>
             ) : null}
           </div>
+
+          {dayInsights.measuredCount > 0 ? (
+            <section aria-labelledby="hotspot-db-title">
+              <p
+                id="hotspot-db-title"
+                className="mb-1.5 px-3 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-[var(--bruit-muted)]"
+              >
+                {t("measuredLevels", { day: dayName })}
+              </p>
+              <div className="bruit-db-card">
+                <div className="bruit-db-card-grid">
+                  <div>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.05em] text-[var(--bruit-muted)]">
+                      {t("avgDb")}
+                    </p>
+                    <p
+                      className="bruit-db-card-value"
+                      style={{ color: decibelTint(dayInsights.avgDb) }}
+                    >
+                      {dayInsights.avgDb}
+                      <span className="bruit-db-card-unit">dB</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.05em] text-[var(--bruit-muted)]">
+                      {t("peakDb")}
+                    </p>
+                    <p
+                      className="bruit-db-card-value"
+                      style={{ color: decibelTint(dayInsights.peakDb) }}
+                    >
+                      {dayInsights.peakDb}
+                      <span className="bruit-db-card-unit">dB</span>
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-[0.82rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
+                  {t("measuredCount", { count: dayInsights.measuredCount })}
+                  {slotInsights.avgDb != null &&
+                  slotInsights.total !== dayInsights.total ? (
+                    <>
+                      <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                        ·
+                      </span>
+                      {t("slotAvgDb", { db: slotInsights.avgDb })}
+                    </>
+                  ) : null}
+                </p>
+              </div>
+            </section>
+          ) : null}
 
           {daySlots.length > 0 ? (
             <section aria-labelledby="hotspot-day-rhythm-title">
@@ -679,6 +731,44 @@ export function InsightsView({
                   </p>
                 </div>
               </div>
+              {insights.measuredCount > 0 ? (
+                <div className="bruit-db-strip mt-3">
+                  <div>
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.05em] text-[var(--bruit-muted)]">
+                      {t("avgDb")}
+                    </p>
+                    <p
+                      className="text-[1.35rem] font-semibold tabular-nums tracking-tight"
+                      style={{ color: decibelTint(insights.avgDb) }}
+                    >
+                      {insights.avgDb}
+                      <span className="ml-1 text-[0.78rem] font-semibold text-[var(--bruit-muted)]">
+                        dB
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.05em] text-[var(--bruit-muted)]">
+                      {t("peakDb")}
+                    </p>
+                    <p
+                      className="text-[1.35rem] font-semibold tabular-nums tracking-tight"
+                      style={{ color: decibelTint(insights.peakDb) }}
+                    >
+                      {insights.peakDb}
+                      <span className="ml-1 text-[0.78rem] font-semibold text-[var(--bruit-muted)]">
+                        dB
+                      </span>
+                    </p>
+                  </div>
+                  <p className="col-span-2 text-[0.78rem] font-medium text-[var(--bruit-muted)]">
+                    {t("cityMeasured", {
+                      count: insights.measuredCount,
+                      peak: insights.peakDb ?? "—",
+                    })}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <section aria-labelledby="insights-hotspots-title">
@@ -719,9 +809,20 @@ export function InsightsView({
                               ·
                             </span>
                             {t("dayCount", { count: hotspot.distinctDays })}
-                            {hotspot.topCategory
-                              ? ` · ${categoryLabel(tCategories, hotspot.topCategory.id)}`
-                              : ""}
+                            {hotspot.avgDb != null ? (
+                              <>
+                                <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                                  ·
+                                </span>
+                                <span style={{ color: decibelTint(hotspot.avgDb) }}>
+                                  {t("avgDbValue", { db: hotspot.avgDb })}
+                                </span>
+                              </>
+                            ) : hotspot.topCategory ? (
+                              ` · ${categoryLabel(tCategories, hotspot.topCategory.id)}`
+                            ) : (
+                              ""
+                            )}
                           </span>
                         </span>
                         <Chevron />

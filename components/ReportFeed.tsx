@@ -213,6 +213,14 @@ export function ReportFeed({
                               </span>
                               <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
                                 {intensityLabel(tIntensities, report.intensity)}
+                                {typeof report.db_avg === "number" ? (
+                                  <>
+                                    <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
+                                      ·
+                                    </span>
+                                    {Math.round(report.db_avg)} dB
+                                  </>
+                                ) : null}
                                 <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
                                   ·
                                 </span>

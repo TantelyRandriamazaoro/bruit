@@ -240,6 +240,8 @@ export function HomeClient() {
   const submitReport = async (details: {
     category: NoiseCategory;
     intensity: NoiseIntensity;
+    dbAvg?: number | null;
+    dbPeak?: number | null;
   }) => {
     setBusy(true);
 
@@ -257,6 +259,8 @@ export function HomeClient() {
             lng,
             category: details.category,
             intensity: details.intensity,
+            dbAvg: details.dbAvg,
+            dbPeak: details.dbPeak,
           });
 
           if (!result.ok) {
