@@ -23,8 +23,8 @@ export const NOISE_INTENSITIES: {
   id: NoiseIntensity;
   weight: number;
 }[] = [
-  { id: "moderate", weight: 0.45 },
-  { id: "loud", weight: 0.75 },
+  { id: "moderate", weight: 0.7 },
+  { id: "loud", weight: 0.85 },
   { id: "very_loud", weight: 1 },
   { id: "extreme", weight: 1.35 },
 ];

@@ -4,7 +4,7 @@ export const HEATMAP_DAYS = 7;
 /** Two windows of HEATMAP_DAYS for municipal week-over-week Insights */
 export const INSIGHTS_DAYS = HEATMAP_DAYS * 2;
 /** Area stays “live” for this long after its newest report. */
-export const LIVE_MAP_TTL_MS = 6 * 60 * 60 * 1000;
+export const LIVE_MAP_TTL_MS = 24 * 60 * 60 * 1000;
 /**
  * Hard cap for lingering reports in an active area.
  * Older points never appear on the live map, even if the cell stays active.
