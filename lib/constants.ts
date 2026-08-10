@@ -7,7 +7,7 @@ export const INSIGHTS_DAYS = HEATMAP_DAYS * 2;
 export const NEARBY_ACTIVITY_KM = 1;
 /** Must be this close to confirm or mark quiet (meters). */
 export const VERIFY_RADIUS_M = 300;
-/** Auto-prompt the incident card when inside this radius of a report group. */
+/** Vicinity confirmation radius for the report-button incident card. */
 export const VICINITY_RADIUS_M = 300;
 /** Area stays “live” for this long after its newest report. */
 export const LIVE_MAP_TTL_MS = 24 * 60 * 60 * 1000;
@@ -16,6 +16,12 @@ export const LIVE_MAP_TTL_MS = 24 * 60 * 60 * 1000;
  * Older points never appear on the live map, even if the cell stays active.
  */
 export const LIVE_MAP_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/**
+ * Hot color window from a cluster’s newest report.
+ * Within this: warm heat + intensity tints. Past this: cool cyan (weight still
+ * decays over LIVE_MAP_MAX_AGE_MS, not this window).
+ */
+export const HOT_REPORT_WINDOW_MS = 3 * 60 * 60 * 1000;
 export const DEVICE_ID_KEY = "bruit_device_id";
 export const LAST_REPORT_AT_KEY = "bruit_last_report_at";
 export const WELCOME_SEEN_KEY = "bruit_welcome_seen";
@@ -31,7 +37,7 @@ export const DEFAULT_CENTER = {
   lng: 47.5079,
 } as const;
 
-export const DEFAULT_ZOOM = 13;
+export const DEFAULT_ZOOM = 15;
 
 /**
  * Carto Positron / Dark Matter vectors — paint is remapped in

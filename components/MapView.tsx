@@ -18,17 +18,29 @@ import {
   mapStyleForTheme,
 } from "@/lib/constants";
 import { applyGoogleMapsBasemapTheme } from "@/lib/map-style";
-import { liveMapWeight } from "@/lib/live-map";
+import {
+  isHotReportGroup,
+  liveCellKeyForReport,
+  liveMapWeight,
+  newestByLiveCell,
+} from "@/lib/live-map";
 import {
   createLucideMarkerIcon,
   PHONE_MARKER_COLORS,
 } from "@/lib/lucide-marker";
 import { PHONE_ICON_NODE } from "@/lib/lucide-phone-node";
 import {
+  COOL_HEATMAP_COLOR,
+  HOT_HEATMAP_COLOR,
+  intensityRadiusScale,
+} from "@/lib/noise-meta";
+import {
   policeStationsToGeoJSON,
   type SelectedPoliceStation,
 } from "@/lib/police-stations";
 import type { NoiseReport } from "@/lib/supabase/types";
+
+const HEAT_LAYER_IDS = ["noise-heat-cool", "noise-heat-hot"] as const;
 
 let workerConfigured = false;
 
@@ -60,20 +72,29 @@ function reportsToGeoJSON(
   reports: NoiseReport[],
   now = Date.now(),
 ): GeoJSON.FeatureCollection {
+  const newestByCell = newestByLiveCell(reports);
+
   return {
     type: "FeatureCollection",
-    features: reports.map((report) => ({
-      type: "Feature",
-      properties: {
-        id: report.id,
-        created_at: report.created_at,
-        weight: liveMapWeight(report, now),
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [report.lng, report.lat],
-      },
-    })),
+    features: reports.map((report) => {
+      const cellNewest =
+        newestByCell.get(liveCellKeyForReport(report)) ??
+        new Date(report.created_at).getTime();
+      return {
+        type: "Feature",
+        properties: {
+          id: report.id,
+          created_at: report.created_at,
+          weight: liveMapWeight(report, cellNewest, now),
+          radius: intensityRadiusScale(report.intensity),
+          hot: isHotReportGroup(cellNewest, now) ? 1 : 0,
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [report.lng, report.lat],
+        },
+      };
+    }),
   };
 }
 
@@ -91,52 +112,92 @@ function addNoiseHeatLayer(
     data: reportsToGeoJSON(reports),
   });
 
+  const visibility = heatmapVisible ? "visible" : "none";
+  // Pixel radius for a ~150 m loud kernel near Antananarivo (~18.9°S).
+  // Exponential zoom keeps that meter footprint stable while panning zoom.
+  const loudRadiusPxAtZ12 = 4.2;
+  const loudRadiusPxAtZ17 = loudRadiusPxAtZ12 * 2 ** 5; // 134.4
+  const sharedPaint = {
+    "heatmap-weight": ["coalesce", ["get", "weight"], 0.75] as [
+      "coalesce",
+      ["get", string],
+      number,
+    ],
+    "heatmap-intensity": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      12,
+      0.85,
+      15,
+      1.15,
+    ] as [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      number,
+      number,
+      number,
+      number,
+    ],
+    // Meter-stable kernel: doubles each zoom level, scaled by loudness.
+    "heatmap-radius": [
+      "interpolate",
+      ["exponential", 2],
+      ["zoom"],
+      12,
+      ["*", loudRadiusPxAtZ12, ["coalesce", ["get", "radius"], 1]],
+      17,
+      ["*", loudRadiusPxAtZ17, ["coalesce", ["get", "radius"], 1]],
+    ] as unknown as [
+      "interpolate",
+      ["exponential", number],
+      ["zoom"],
+      number,
+      number,
+      number,
+      number,
+    ],
+    "heatmap-opacity": 0.78,
+  };
+
+  // Cool under hot so fresh activity stays visually on top.
+  // Hidden below z12: a 100–300 m incident is only a few pixels city-wide.
   map.addLayer({
-    id: "noise-heat",
+    id: "noise-heat-cool",
     type: "heatmap",
     source: "noise-reports",
+    minzoom: 12,
     maxzoom: 18,
-    layout: {
-      visibility: heatmapVisible ? "visible" : "none",
-    },
+    filter: ["==", ["get", "hot"], 0],
+    layout: { visibility },
     paint: {
-      "heatmap-weight": ["coalesce", ["get", "weight"], 0.75],
-      "heatmap-intensity": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        10,
-        0.55,
-        15,
-        1.25,
-      ],
+      ...sharedPaint,
       "heatmap-color": [
         "interpolate",
         ["linear"],
         ["heatmap-density"],
-        0,
-        "rgba(0,0,0,0)",
-        0.08,
-        "rgba(255, 159, 10, 0.58)",
-        0.28,
-        "rgba(255, 120, 10, 0.7)",
-        0.5,
-        "rgba(255, 69, 58, 0.78)",
-        0.72,
-        "rgba(191, 90, 242, 0.86)",
-        1,
-        "rgba(175, 82, 222, 0.94)",
+        ...COOL_HEATMAP_COLOR,
       ],
-      "heatmap-radius": [
+    },
+  });
+
+  map.addLayer({
+    id: "noise-heat-hot",
+    type: "heatmap",
+    source: "noise-reports",
+    minzoom: 12,
+    maxzoom: 18,
+    filter: ["==", ["get", "hot"], 1],
+    layout: { visibility },
+    paint: {
+      ...sharedPaint,
+      "heatmap-color": [
         "interpolate",
         ["linear"],
-        ["zoom"],
-        10,
-        33,
-        15,
-        63,
+        ["heatmap-density"],
+        ...HOT_HEATMAP_COLOR,
       ],
-      "heatmap-opacity": 0.78,
     },
   });
 }
@@ -427,15 +488,16 @@ export function MapView({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !styleReady || !map.getLayer("noise-heat")) {
+    if (!map || !styleReady) {
       return;
     }
 
-    map.setLayoutProperty(
-      "noise-heat",
-      "visibility",
-      heatmapVisible ? "visible" : "none",
-    );
+    const visibility = heatmapVisible ? "visible" : "none";
+    for (const layerId of HEAT_LAYER_IDS) {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, "visibility", visibility);
+      }
+    }
   }, [heatmapVisible, styleReady]);
 
   useEffect(() => {
