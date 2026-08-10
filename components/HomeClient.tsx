@@ -10,6 +10,7 @@ import { MapChrome } from "@/components/MapChrome";
 import { MapLoading } from "@/components/MapLoading";
 import { OpenInBrowserAlert } from "@/components/OpenInBrowserAlert";
 import { PoliceStationDrawer } from "@/components/PoliceStationDrawer";
+import { MeasureDrawer } from "@/components/MeasureDrawer";
 import { ReportDrawer } from "@/components/ReportDrawer";
 import { ReportFeed } from "@/components/ReportFeed";
 import { TabBar, type AppTab } from "@/components/TabBar";
@@ -84,6 +85,11 @@ export function HomeClient() {
   const [busy, setBusy] = useState(false);
   const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [measureOpen, setMeasureOpen] = useState(false);
+  const [reportSeedReading, setReportSeedReading] = useState<{
+    avgDb: number;
+    peakDb: number;
+  } | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [inAppBrowser, setInAppBrowser] = useState(false);
@@ -101,6 +107,7 @@ export function HomeClient() {
   const policeDrawerOpen = selectedPoliceStation !== null;
   const overlayOpen =
     drawerOpen ||
+    measureOpen ||
     policeDrawerOpen ||
     welcomeOpen ||
     inAppBrowserAlertOpen;
@@ -187,6 +194,7 @@ export function HomeClient() {
     setStatus(null);
     setSelectedPoliceStation(null);
     setDrawerOpen(false);
+    setMeasureOpen(false);
     setInAppBrowserAlertOpen(true);
     return true;
   }, [inAppBrowser]);
@@ -271,7 +279,7 @@ export function HomeClient() {
     return () => window.clearTimeout(id);
   }, [activeTab, mapApi]);
 
-  const openDrawer = () => {
+  const openDrawer = (seed?: { avgDb: number; peakDb: number } | null) => {
     if (!configured) {
       setStatus({
         message: t("missingEnv"),
@@ -294,7 +302,20 @@ export function HomeClient() {
 
     setStatus(null);
     setSelectedPoliceStation(null);
+    setMeasureOpen(false);
+    setReportSeedReading(seed ?? null);
     setDrawerOpen(true);
+  };
+
+  const openMeasure = () => {
+    if (requireExternalBrowser()) {
+      return;
+    }
+
+    setStatus(null);
+    setSelectedPoliceStation(null);
+    setDrawerOpen(false);
+    setMeasureOpen(true);
   };
 
   const submitReport = async (details: {
@@ -330,6 +351,7 @@ export function HomeClient() {
               setLastReportAt(lastAt);
               setCooldownMs(getCooldownRemainingMs());
               setDrawerOpen(false);
+              setReportSeedReading(null);
               setStatus({
                 message: t("rateLimited", {
                   minutes: Math.ceil(retryMs / 1000 / 60),
@@ -348,6 +370,7 @@ export function HomeClient() {
           setLastReportAt(Date.now());
           setCooldownMs(getCooldownRemainingMs());
           setDrawerOpen(false);
+          setReportSeedReading(null);
           setActiveTab("feed");
           setStatus({
             message: t("reported"),
@@ -477,6 +500,7 @@ export function HomeClient() {
           onMapApi={setMapApi}
           onSelectPoliceStation={(station) => {
             setDrawerOpen(false);
+            setMeasureOpen(false);
             setAboutOpen(false);
             setSelectedPoliceStation(station);
           }}
@@ -490,7 +514,7 @@ export function HomeClient() {
           userLocation={userLocation}
           canReport={configured && cooldownMs <= 0}
           deletingReportId={deletingReportId}
-          onReport={openDrawer}
+          onReport={() => openDrawer()}
           onSelectReport={(report) => {
             openHotspotOnMap(report);
           }}
@@ -502,7 +526,7 @@ export function HomeClient() {
         <InsightsView
           reports={reports}
           canReport={configured && cooldownMs <= 0}
-          onReport={openDrawer}
+          onReport={() => openDrawer()}
           onOpenHotspot={openHotspotOnMap}
         />
       ) : null}
@@ -552,7 +576,8 @@ export function HomeClient() {
       <TabBar
         active={activeTab}
         onChange={setActiveTab}
-        onReport={openDrawer}
+        onReport={() => openDrawer()}
+        onMeasure={openMeasure}
         cooldownMs={cooldownMs}
         busy={busy && !drawerOpen}
         feedCount={recentReports.length}
@@ -561,13 +586,22 @@ export function HomeClient() {
         onDismissStatus={() => setStatus(null)}
       />
 
+      <MeasureDrawer
+        open={measureOpen}
+        container={shellEl}
+        onClose={() => setMeasureOpen(false)}
+        onReportThis={(reading) => openDrawer(reading)}
+      />
+
       <ReportDrawer
         open={drawerOpen}
         busy={busy}
+        seedReading={reportSeedReading}
         container={shellEl}
         onClose={() => {
           if (!busy) {
             setDrawerOpen(false);
+            setReportSeedReading(null);
           }
         }}
         onSubmit={(details) => void submitReport(details)}

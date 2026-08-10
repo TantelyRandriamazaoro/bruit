@@ -17,6 +17,8 @@ import {
 type ReportDrawerProps = {
   open: boolean;
   busy?: boolean;
+  /** Prefill measured levels when opening from the measure sheet. */
+  seedReading?: { avgDb: number; peakDb: number } | null;
   /** Keep drawer inside the app shell (covers the tab bar). */
   container?: HTMLElement | null;
   onClose: () => void;
@@ -31,6 +33,7 @@ type ReportDrawerProps = {
 export function ReportDrawer({
   open,
   busy = false,
+  seedReading = null,
   container = null,
   onClose,
   onSubmit,
@@ -53,13 +56,20 @@ export function ReportDrawer({
     }
     const frame = window.requestAnimationFrame(() => {
       setCategory("traffic");
-      setIntensity("loud");
-      setDbAvg(null);
-      setDbPeak(null);
-      setIntensityTouched(false);
+      if (seedReading) {
+        setDbAvg(seedReading.avgDb);
+        setDbPeak(seedReading.peakDb);
+        setIntensity(intensityFromDb(seedReading.peakDb));
+        setIntensityTouched(false);
+      } else {
+        setIntensity("loud");
+        setDbAvg(null);
+        setDbPeak(null);
+        setIntensityTouched(false);
+      }
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [open]);
+  }, [open, seedReading]);
 
   const handleReadingChange = useCallback(
     (reading: { avgDb: number; peakDb: number } | null) => {
@@ -160,6 +170,7 @@ export function ReportDrawer({
               <NoiseMeter
                 active={open}
                 busy={busy}
+                seedReading={seedReading}
                 onReadingChange={handleReadingChange}
               />
             </div>

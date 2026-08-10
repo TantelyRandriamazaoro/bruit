@@ -81,9 +81,28 @@ function createEngine(): MeterEngine {
   };
 }
 
-export function useNoiseMeter(active: boolean) {
-  const [state, setState] = useState<NoiseMeterState>(IDLE);
+function seededState(seed: DecibelReading): NoiseMeterState {
+  return {
+    ...IDLE,
+    phase: "done",
+    liveDb: seed.avgDb,
+    avgDb: seed.avgDb,
+    peakDb: seed.peakDb,
+    secondsLeft: 0,
+    reading: seed,
+    audioUrl: null,
+  };
+}
+
+export function useNoiseMeter(
+  active: boolean,
+  seedReading: DecibelReading | null = null,
+) {
+  const [state, setState] = useState<NoiseMeterState>(() =>
+    seedReading ? seededState(seedReading) : IDLE,
+  );
   const engineRef = useRef<MeterEngine>(createEngine());
+  const seedKeyRef = useRef<string | null>(null);
 
   const revokeAudioUrl = useCallback((engine: MeterEngine) => {
     if (engine.audioUrl) {
@@ -173,20 +192,41 @@ export function useNoiseMeter(active: boolean) {
   }, [revokeAudioUrl, stopHardware]);
 
   useEffect(() => {
-    if (active) {
+    if (!active) {
+      const engine = engineRef.current;
+      stopHardware(engine);
+      revokeAudioUrl(engine);
+      engine.samples = [];
+      engine.peak = 0;
+      engine.phase = "idle";
+      seedKeyRef.current = null;
+      const frame = window.requestAnimationFrame(() => {
+        setState(IDLE);
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (!seedReading) {
       return;
     }
+
+    const seedKey = `${seedReading.avgDb}:${seedReading.peakDb}:${seedReading.samples}`;
+    if (seedKeyRef.current === seedKey) {
+      return;
+    }
+    seedKeyRef.current = seedKey;
+
     const engine = engineRef.current;
     stopHardware(engine);
     revokeAudioUrl(engine);
     engine.samples = [];
-    engine.peak = 0;
-    engine.phase = "idle";
+    engine.peak = seedReading.peakDb;
+    engine.phase = "done";
     const frame = window.requestAnimationFrame(() => {
-      setState(IDLE);
+      setState(seededState(seedReading));
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [active, revokeAudioUrl, stopHardware]);
+  }, [active, revokeAudioUrl, seedReading, stopHardware]);
 
   useEffect(() => {
     const engine = engineRef.current;

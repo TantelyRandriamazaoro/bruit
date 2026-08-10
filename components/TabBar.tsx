@@ -7,6 +7,7 @@ import {
   Flag,
   List,
   Map as MapIcon,
+  Mic,
   Phone,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ type TabBarProps = {
   active: AppTab;
   onChange: (tab: AppTab) => void;
   onReport: () => void;
+  onMeasure: () => void;
   cooldownMs: number;
   busy?: boolean;
   statusMessage?: string | null;
@@ -37,6 +39,7 @@ export function TabBar({
   active,
   onChange,
   onReport,
+  onMeasure,
   cooldownMs,
   busy = false,
   statusMessage,
@@ -110,7 +113,18 @@ export function TabBar({
         </div>
       ) : null}
 
-      <div className="mb-2.5 flex w-full max-w-lg justify-end">
+      <div className="mb-2.5 flex w-full max-w-lg items-center justify-between gap-2.5">
+        <button
+          type="button"
+          onClick={onMeasure}
+          disabled={busy}
+          aria-label={t("measureNoise")}
+          title={t("measure")}
+          className="bruit-measure-fab pointer-events-auto cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Mic size={20} strokeWidth={2} aria-hidden />
+        </button>
+
         <button
           type="button"
           onClick={onReport}

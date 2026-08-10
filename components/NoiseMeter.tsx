@@ -15,6 +15,12 @@ import { useNoiseMeter } from "@/lib/use-noise-meter";
 type NoiseMeterProps = {
   active: boolean;
   busy?: boolean;
+  /** Prefill a completed sample (e.g. when opening report from measure). */
+  seedReading?: { avgDb: number; peakDb: number } | null;
+  /** Hide the section title when the parent sheet already provides one. */
+  showHeading?: boolean;
+  /** `sheet` = Apple-style hero meter; `card` = denser inset used in report. */
+  variant?: "card" | "sheet";
   onReadingChange: (
     reading: { avgDb: number; peakDb: number } | null,
   ) => void;
@@ -23,13 +29,26 @@ type NoiseMeterProps = {
 export function NoiseMeter({
   active,
   busy = false,
+  seedReading = null,
+  showHeading = true,
+  variant = "card",
   onReadingChange,
 }: NoiseMeterProps) {
   const t = useTranslations("Report");
-  const meter = useNoiseMeter(active);
+  const meter = useNoiseMeter(
+    active,
+    seedReading
+      ? {
+          avgDb: seedReading.avgDb,
+          peakDb: seedReading.peakDb,
+          samples: 1,
+        }
+      : null,
+  );
   const titleId = useId();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const isSheet = variant === "sheet";
   const displayDb =
     meter.phase === "recording"
       ? meter.liveDb
@@ -63,7 +82,8 @@ export function NoiseMeter({
 
   const audioUrl = meter.audioUrl;
 
-  const radius = 54;
+  const radius = isSheet ? 62 : 54;
+  const ringSize = isSheet ? 168 : 148;
   const circumference = 2 * Math.PI * radius;
   const dash = circumference * Math.max(0.02, progress);
 
@@ -79,10 +99,12 @@ export function NoiseMeter({
       case "recording":
         return t("measureListening", { seconds: meter.secondsLeft });
       case "done":
-        return t("measureDone", {
-          avg: roundDb(meter.avgDb),
-          peak: roundDb(meter.peakDb),
-        });
+        return isSheet
+          ? bandLabel
+          : t("measureDone", {
+              avg: roundDb(meter.avgDb),
+              peak: roundDb(meter.peakDb),
+            });
       case "denied":
         return t("measureDenied");
       case "unsupported":
@@ -94,44 +116,76 @@ export function NoiseMeter({
     }
   })();
 
+  const togglePlayback = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      void audio.play().then(() => setPlaying(true));
+    }
+  };
+
   return (
     <section
-      className="bruit-noise-meter"
+      className={`bruit-noise-meter${isSheet ? " bruit-noise-meter--sheet" : ""}`}
       aria-labelledby={titleId}
       aria-live="polite"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p
-            id={titleId}
-            className="text-[0.8rem] font-semibold text-[var(--bruit-muted)]"
-          >
-            {t("measure")}
-          </p>
-          <p className="mt-0.5 text-[0.78rem] font-medium leading-snug text-[var(--bruit-muted)]">
-            {statusCopy}
-          </p>
+      {!isSheet ? (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            {showHeading ? (
+              <p
+                id={titleId}
+                className="text-[0.8rem] font-semibold text-[var(--bruit-muted)]"
+              >
+                {t("measure")}
+              </p>
+            ) : (
+              <span id={titleId} className="sr-only">
+                {t("measure")}
+              </span>
+            )}
+            <p
+              className={`${showHeading ? "mt-0.5" : ""} text-[0.78rem] font-medium leading-snug text-[var(--bruit-muted)]`}
+            >
+              {statusCopy}
+            </p>
+          </div>
+          {meter.phase === "done" ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => meter.reset()}
+              className="bruit-meter-ghost-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCcw size={14} strokeWidth={2.2} aria-hidden />
+              {t("measureAgain")}
+            </button>
+          ) : null}
         </div>
-        {meter.phase === "done" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => meter.reset()}
-            className="bruit-meter-ghost-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RotateCcw size={14} strokeWidth={2.2} aria-hidden />
-            {t("measureAgain")}
-          </button>
-        ) : null}
-      </div>
+      ) : (
+        <>
+          <span id={titleId} className="sr-only">
+            {t("measure")}
+          </span>
+          {meter.phase !== "idle" ? (
+            <div className="bruit-meter-sheet-status">
+              <p className="bruit-meter-sheet-status-copy">{statusCopy}</p>
+            </div>
+          ) : null}
+        </>
+      )}
 
       <div className="bruit-meter-stage">
         <div className="bruit-meter-ring-wrap" aria-hidden>
           <svg
             className="bruit-meter-ring"
             viewBox="0 0 128 128"
-            width="148"
-            height="148"
+            width={ringSize}
+            height={ringSize}
           >
             <circle
               cx="64"
@@ -139,7 +193,7 @@ export function NoiseMeter({
               r={radius}
               fill="none"
               stroke="var(--bruit-fill)"
-              strokeWidth="8"
+              strokeWidth={isSheet ? 6 : 8}
             />
             <circle
               className="bruit-meter-ring-progress"
@@ -148,7 +202,7 @@ export function NoiseMeter({
               r={radius}
               fill="none"
               stroke={tint}
-              strokeWidth="8"
+              strokeWidth={isSheet ? 6 : 8}
               strokeLinecap="round"
               strokeDasharray={`${dash} ${circumference}`}
               transform="rotate(-90 64 64)"
@@ -157,14 +211,17 @@ export function NoiseMeter({
           <div className="bruit-meter-readout">
             <p
               className="bruit-meter-value"
-              style={{ color: tint === "var(--bruit-hairline-strong)" ? undefined : tint }}
+              style={{
+                color:
+                  tint === "var(--bruit-hairline-strong)" ? undefined : tint,
+              }}
             >
               {meter.phase === "idle" || meter.phase === "requesting"
                 ? "—"
                 : roundDb(displayDb || 0)}
             </p>
             <p className="bruit-meter-unit">dB</p>
-            <p className="bruit-meter-band">{bandLabel}</p>
+            {!isSheet ? <p className="bruit-meter-band">{bandLabel}</p> : null}
           </div>
         </div>
 
@@ -189,19 +246,96 @@ export function NoiseMeter({
         </div>
       </div>
 
-      <div className="bruit-meter-actions">
-        {meter.phase === "recording" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => meter.stop()}
-            className="bruit-meter-record-btn bruit-meter-record-btn-stop cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label={t("measureStop")}
-          >
-            <Square size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
-          </button>
-        ) : meter.phase === "done" ? (
-          <div className="flex w-full items-center justify-center gap-3">
+      {!(isSheet && meter.phase === "done") ? (
+        <div className="bruit-meter-actions">
+          {meter.phase === "recording" ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => meter.stop()}
+              className="bruit-meter-record-btn bruit-meter-record-btn-stop cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label={t("measureStop")}
+            >
+              <Square
+                size={isSheet ? 16 : 18}
+                strokeWidth={2.4}
+                fill="currentColor"
+                aria-hidden
+              />
+            </button>
+          ) : meter.phase === "done" ? (
+            <div className="flex w-full items-center justify-center gap-3">
+              {audioUrl ? (
+                <>
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    preload="metadata"
+                    onEnded={() => setPlaying(false)}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={togglePlayback}
+                    className="bruit-meter-ghost-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {playing ? (
+                      <Pause size={14} strokeWidth={2.2} aria-hidden />
+                    ) : (
+                      <Play size={14} strokeWidth={2.2} aria-hidden />
+                    )}
+                    {playing ? t("measurePause") : t("measurePlay")}
+                  </button>
+                </>
+              ) : null}
+              <div className="bruit-meter-stats">
+                <span>
+                  <strong>{roundDb(meter.avgDb)}</strong> {t("avgShort")}
+                </span>
+                <span className="bruit-meter-stats-sep" aria-hidden>
+                  ·
+                </span>
+                <span>
+                  <strong>{roundDb(meter.peakDb)}</strong> {t("peakShort")}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={busy || meter.phase === "requesting"}
+              onClick={() => void meter.start()}
+              className="bruit-meter-record-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label={t("measureStart")}
+            >
+              <Mic size={isSheet ? 24 : 22} strokeWidth={2.1} aria-hidden />
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {isSheet && meter.phase === "done" ? (
+        <>
+          <div className="bruit-meter-metrics" role="group">
+            <div className="bruit-meter-metric">
+              <span className="bruit-meter-metric-label">{t("avgLabel")}</span>
+              <span className="bruit-meter-metric-value">
+                {roundDb(meter.avgDb)}
+                <span className="bruit-meter-metric-unit">dB</span>
+              </span>
+            </div>
+            <div className="bruit-meter-metric-divider" aria-hidden />
+            <div className="bruit-meter-metric">
+              <span className="bruit-meter-metric-label">{t("peakLabel")}</span>
+              <span className="bruit-meter-metric-value">
+                {roundDb(meter.peakDb)}
+                <span className="bruit-meter-metric-unit">dB</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="bruit-meter-sheet-tools">
             {audioUrl ? (
               <>
                 <audio
@@ -214,51 +348,30 @@ export function NoiseMeter({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => {
-                    const audio = audioRef.current;
-                    if (!audio) return;
-                    if (playing) {
-                      audio.pause();
-                      setPlaying(false);
-                    } else {
-                      void audio.play().then(() => setPlaying(true));
-                    }
-                  }}
-                  className="bruit-meter-ghost-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={togglePlayback}
+                  className="bruit-meter-tool-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {playing ? (
-                    <Pause size={14} strokeWidth={2.2} aria-hidden />
+                    <Pause size={15} strokeWidth={2.2} aria-hidden />
                   ) : (
-                    <Play size={14} strokeWidth={2.2} aria-hidden />
+                    <Play size={15} strokeWidth={2.2} aria-hidden />
                   )}
                   {playing ? t("measurePause") : t("measurePlay")}
                 </button>
               </>
             ) : null}
-            <div className="bruit-meter-stats">
-              <span>
-                <strong>{roundDb(meter.avgDb)}</strong> {t("avgShort")}
-              </span>
-              <span className="bruit-meter-stats-sep" aria-hidden>
-                ·
-              </span>
-              <span>
-                <strong>{roundDb(meter.peakDb)}</strong> {t("peakShort")}
-              </span>
-            </div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => meter.reset()}
+              className="bruit-meter-tool-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCcw size={15} strokeWidth={2.2} aria-hidden />
+              {t("measureAgain")}
+            </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            disabled={busy || meter.phase === "requesting"}
-            onClick={() => void meter.start()}
-            className="bruit-meter-record-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label={t("measureStart")}
-          >
-            <Mic size={22} strokeWidth={2.1} aria-hidden />
-          </button>
-        )}
-      </div>
+        </>
+      ) : null}
 
       <p className="bruit-meter-footnote">
         {t("measureFootnote", { seconds: MEASURE_SECONDS })}
