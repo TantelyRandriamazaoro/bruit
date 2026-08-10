@@ -5,7 +5,11 @@ import type {
   CreateNoiseReportResult,
   DeleteNoiseReportResult,
   ListMyNoiseReportsResult,
+  ListMyNoiseVerificationsResult,
   NoiseReport,
+  NoiseVerification,
+  VerificationKind,
+  VerifyNoiseReportResult,
 } from "@/lib/supabase/types";
 
 export async function fetchRecentReports(
@@ -16,11 +20,24 @@ export async function fetchRecentReports(
 
   const { data, error } = await getSupabase()
     .from("noise_reports")
-    .select("id, lat, lng, category, intensity, db_avg, db_peak, created_at")
+    .select(
+      "id, lat, lng, category, intensity, db_avg, db_peak, hear_count, quiet_count, created_at",
+    )
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false });
 
   if (error) {
+    // Fallback if migration 0006 is not applied yet
+    const withDb = await getSupabase()
+      .from("noise_reports")
+      .select("id, lat, lng, category, intensity, db_avg, db_peak, created_at")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (!withDb.error) {
+      return withDb.data ?? [];
+    }
+
     // Fallback if migration 0005 (or 0002) is not applied yet
     const withDetails = await getSupabase()
       .from("noise_reports")
@@ -132,4 +149,47 @@ export async function deleteNoiseReport(params: {
   }
 
   return data as DeleteNoiseReportResult;
+}
+
+export async function fetchMyVerifications(
+  deviceId: string,
+): Promise<NoiseVerification[]> {
+  const { data, error } = await getSupabase().rpc(
+    "list_my_noise_verifications",
+    { p_device_id: deviceId },
+  );
+
+  if (error) {
+    // Migration 0006 may not be applied yet
+    return [];
+  }
+
+  const result = data as ListMyNoiseVerificationsResult;
+  if (!result?.ok) {
+    return [];
+  }
+
+  return result.verifications ?? [];
+}
+
+export async function verifyNoiseReport(params: {
+  deviceId: string;
+  reportId: string;
+  kind: VerificationKind;
+  lat: number;
+  lng: number;
+}): Promise<VerifyNoiseReportResult> {
+  const { data, error } = await getSupabase().rpc("verify_noise_report", {
+    p_device_id: params.deviceId,
+    p_report_id: params.reportId,
+    p_kind: params.kind,
+    p_lat: params.lat,
+    p_lng: params.lng,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as VerifyNoiseReportResult;
 }

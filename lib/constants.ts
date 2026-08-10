@@ -3,8 +3,12 @@ export const COOLDOWN_MS = 30 * 60 * 1000;
 export const HEATMAP_DAYS = 7;
 /** Two windows of HEATMAP_DAYS for municipal week-over-week Insights */
 export const INSIGHTS_DAYS = HEATMAP_DAYS * 2;
-/** Activity “Nearby” radius — same scale as Help commissariats. */
-export const NEARBY_ACTIVITY_KM = 40;
+/** Activity “Nearby” section — reports within this radius. */
+export const NEARBY_ACTIVITY_KM = 1;
+/** Must be this close to confirm or mark quiet (meters). */
+export const VERIFY_RADIUS_M = 300;
+/** Auto-prompt the incident card when inside this radius of a report group. */
+export const VICINITY_RADIUS_M = 300;
 /** Area stays “live” for this long after its newest report. */
 export const LIVE_MAP_TTL_MS = 24 * 60 * 60 * 1000;
 /**

@@ -8,7 +8,18 @@ export type NoiseReport = {
   intensity?: NoiseIntensity | string | null;
   db_avg?: number | null;
   db_peak?: number | null;
+  hear_count?: number | null;
+  quiet_count?: number | null;
   created_at: string;
+};
+
+export type VerificationKind = "hear" | "quiet";
+
+export type NoiseVerification = {
+  report_id: string;
+  kind: VerificationKind;
+  created_at: string;
+  updated_at?: string;
 };
 
 export type AreaLabel = {
@@ -73,6 +84,48 @@ export type DeleteNoiseReportResult =
   | DeleteNoiseReportSuccess
   | DeleteNoiseReportFailure;
 
+export type VerifyNoiseReportSuccess = {
+  ok: true;
+  action: "created" | "updated" | "cleared";
+  my_kind: VerificationKind | null;
+  report: NoiseReport;
+};
+
+export type VerifyNoiseReportFailure = {
+  ok: false;
+  error:
+    | "invalid_device_id"
+    | "invalid_report_id"
+    | "invalid_kind"
+    | "invalid_coordinates"
+    | "not_found"
+    | "own_report"
+    | "report_too_old"
+    | "too_far"
+    | "rate_limited"
+    | string;
+  retry_after_seconds?: number;
+  distance_m?: number;
+};
+
+export type VerifyNoiseReportResult =
+  | VerifyNoiseReportSuccess
+  | VerifyNoiseReportFailure;
+
+export type ListMyNoiseVerificationsSuccess = {
+  ok: true;
+  verifications: NoiseVerification[];
+};
+
+export type ListMyNoiseVerificationsFailure = {
+  ok: false;
+  error: "invalid_device_id" | string;
+};
+
+export type ListMyNoiseVerificationsResult =
+  | ListMyNoiseVerificationsSuccess
+  | ListMyNoiseVerificationsFailure;
+
 export type Database = {
   public: {
     Tables: {
@@ -86,6 +139,8 @@ export type Database = {
           intensity: string;
           db_avg: number | null;
           db_peak: number | null;
+          hear_count: number;
+          quiet_count: number;
           created_at: string;
         };
         Insert: {
@@ -97,6 +152,8 @@ export type Database = {
           intensity?: string;
           db_avg?: number | null;
           db_peak?: number | null;
+          hear_count?: number;
+          quiet_count?: number;
           created_at?: string;
         };
         Update: {
@@ -108,7 +165,42 @@ export type Database = {
           intensity?: string;
           db_avg?: number | null;
           db_peak?: number | null;
+          hear_count?: number;
+          quiet_count?: number;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      noise_verifications: {
+        Row: {
+          id: string;
+          report_id: string;
+          device_id: string;
+          kind: VerificationKind;
+          lat: number | null;
+          lng: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          report_id: string;
+          device_id: string;
+          kind: VerificationKind;
+          lat?: number | null;
+          lng?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          report_id?: string;
+          device_id?: string;
+          kind?: VerificationKind;
+          lat?: number | null;
+          lng?: number | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -158,6 +250,22 @@ export type Database = {
           p_report_id: string;
         };
         Returns: DeleteNoiseReportResult;
+      };
+      verify_noise_report: {
+        Args: {
+          p_device_id: string;
+          p_report_id: string;
+          p_kind: VerificationKind;
+          p_lat?: number | null;
+          p_lng?: number | null;
+        };
+        Returns: VerifyNoiseReportResult;
+      };
+      list_my_noise_verifications: {
+        Args: {
+          p_device_id: string;
+        };
+        Returns: ListMyNoiseVerificationsResult;
       };
     };
     Views: Record<string, never>;
