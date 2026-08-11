@@ -4,27 +4,38 @@ import type { NoiseReport } from "@/lib/supabase/types";
 
 /** Rolling window scope — rightmost in the chrome (most current). */
 export const ACTIVITY_SCOPE_24H = "rolling-24h";
+/** Full loaded history for the current report set. */
+export const ACTIVITY_SCOPE_ALL = "all-time";
 
 export type ActivityScopeLabels = {
   rolling24h: string;
   rolling24hShort: string;
   today: string;
   yesterday: string;
+  allTime?: string;
+  allTimeShort?: string;
 };
 
 export type ActivityScope = {
   key: string;
-  /** Pill eyebrow (24h / T / F). */
+  /** Pill eyebrow (All / 24h / T / F). */
   shortLabel: string;
   /** Full caption under the title. */
   label: string;
-  /** Large pill value (day-of-month), empty for the 24h slot. */
+  /** Large pill value (day-of-month), empty for All / 24h. */
   dateText: string;
   startMs: number;
   endMs: number;
   count: number;
   isRolling24h: boolean;
+  isAllTime: boolean;
   isToday: boolean;
+};
+
+export type BuildActivityScopesOptions = {
+  dayCount?: number;
+  /** Prefixed All-time scope for regional map / municipal brief. */
+  includeAllTime?: boolean;
 };
 
 function startOfLocalDay(date: Date): Date {
@@ -48,20 +59,42 @@ function weekdayPillLabel(date: Date, locale: string): string {
 }
 
 /**
- * Activity chrome scopes: older calendar days → Today → Last 24h (LTR).
- * Default selection is the rolling 24h slot.
+ * Activity chrome scopes: [All] → older calendar days → Today → Last 24h (LTR).
+ * Default selection remains the rolling 24h slot unless callers choose otherwise.
  */
 export function buildActivityScopes(
   reports: NoiseReport[],
   labels: ActivityScopeLabels,
   locale = "en",
   now = Date.now(),
-  dayCount = HEATMAP_DAYS,
+  dayCountOrOptions: number | BuildActivityScopesOptions = HEATMAP_DAYS,
 ): ActivityScope[] {
+  const options: BuildActivityScopesOptions =
+    typeof dayCountOrOptions === "number"
+      ? { dayCount: dayCountOrOptions }
+      : dayCountOrOptions;
+  const dayCount = options.dayCount ?? HEATMAP_DAYS;
+  const includeAllTime = Boolean(options.includeAllTime);
+
   const scopes: ActivityScope[] = [];
   const todayStart = startOfLocalDay(new Date(now));
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+  if (includeAllTime) {
+    scopes.push({
+      key: ACTIVITY_SCOPE_ALL,
+      shortLabel: labels.allTimeShort ?? "All",
+      label: labels.allTime ?? "All time",
+      dateText: "",
+      startMs: Number.NEGATIVE_INFINITY,
+      endMs: now + 1,
+      count: reports.length,
+      isRolling24h: false,
+      isAllTime: true,
+      isToday: false,
+    });
+  }
 
   for (let i = dayCount - 1; i >= 0; i -= 1) {
     const dayStart = new Date(todayStart);
@@ -98,6 +131,7 @@ export function buildActivityScopes(
       endMs,
       count: dayReports.length,
       isRolling24h: false,
+      isAllTime: false,
       isToday,
     });
   }
@@ -113,6 +147,7 @@ export function buildActivityScopes(
     endMs: now + 1,
     count: rollingReports.length,
     isRolling24h: true,
+    isAllTime: false,
     isToday: false,
   });
 
@@ -121,7 +156,10 @@ export function buildActivityScopes(
 
 export function filterReportsByScope(
   reports: NoiseReport[],
-  scope: Pick<ActivityScope, "startMs" | "endMs">,
+  scope: Pick<ActivityScope, "startMs" | "endMs" | "isAllTime">,
 ): NoiseReport[] {
+  if (scope.isAllTime || !Number.isFinite(scope.startMs)) {
+    return reports;
+  }
   return reportsInSlot(reports, scope.startMs, scope.endMs);
 }
