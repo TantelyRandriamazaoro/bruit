@@ -836,6 +836,8 @@ export function HomeClient() {
       {activeTab === "insights" ? (
         <InsightsView
           reports={reports}
+          userLocation={userLocation}
+          container={shellEl}
           canReport={configured && cooldownMs <= 0}
           onReport={() => openDrawer()}
           onOpenHotspot={openHotspotOnMap}
