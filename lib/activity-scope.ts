@@ -36,7 +36,17 @@ export type BuildActivityScopesOptions = {
   dayCount?: number;
   /** Prefixed All-time scope for regional map / municipal brief. */
   includeAllTime?: boolean;
+  /** When false, omit the rolling 24h slot (calendar days only). */
+  includeRolling24h?: boolean;
 };
+
+/** Reports from the last 24 hours — Activity’s default live window. */
+export function filterReportsLast24h(
+  reports: NoiseReport[],
+  now = Date.now(),
+): NoiseReport[] {
+  return reportsInSlot(reports, now - 24 * 60 * 60 * 1000, now + 1);
+}
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -75,6 +85,7 @@ export function buildActivityScopes(
       : dayCountOrOptions;
   const dayCount = options.dayCount ?? HEATMAP_DAYS;
   const includeAllTime = Boolean(options.includeAllTime);
+  const includeRolling24h = options.includeRolling24h !== false;
 
   const scopes: ActivityScope[] = [];
   const todayStart = startOfLocalDay(new Date(now));
@@ -136,20 +147,22 @@ export function buildActivityScopes(
     });
   }
 
-  const rollingStart = now - 24 * 60 * 60 * 1000;
-  const rollingReports = reportsInSlot(reports, rollingStart, now + 1);
-  scopes.push({
-    key: ACTIVITY_SCOPE_24H,
-    shortLabel: labels.rolling24hShort,
-    label: labels.rolling24h,
-    dateText: "",
-    startMs: rollingStart,
-    endMs: now + 1,
-    count: rollingReports.length,
-    isRolling24h: true,
-    isAllTime: false,
-    isToday: false,
-  });
+  if (includeRolling24h) {
+    const rollingStart = now - 24 * 60 * 60 * 1000;
+    const rollingReports = reportsInSlot(reports, rollingStart, now + 1);
+    scopes.push({
+      key: ACTIVITY_SCOPE_24H,
+      shortLabel: labels.rolling24hShort,
+      label: labels.rolling24h,
+      dateText: "",
+      startMs: rollingStart,
+      endMs: now + 1,
+      count: rollingReports.length,
+      isRolling24h: true,
+      isAllTime: false,
+      isToday: false,
+    });
+  }
 
   return scopes;
 }

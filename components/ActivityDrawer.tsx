@@ -301,11 +301,11 @@ export function ActivityDrawer({
       autoFocus
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="bruit-drawer-overlay bruit-place-overlay fixed inset-0 z-[60]" />
+        <Drawer.Overlay className="bruit-drawer-overlay bruit-place-overlay fixed inset-0 z-[80]" />
         <Drawer.Content
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
-          className="bruit-sheet bruit-drawer-content bruit-place-drawer bruit-activity-drawer fixed z-[60] flex w-full flex-col outline-none focus:outline-none"
+          className="bruit-sheet bruit-drawer-content bruit-place-drawer bruit-activity-drawer fixed z-[80] flex w-full flex-col outline-none focus:outline-none"
         >
           <Drawer.Handle className="bruit-drawer-handle mx-auto mt-2 mb-0.5" />
 

@@ -9,12 +9,15 @@ type ActivityDayChromeProps = {
   scopes: ActivityScope[];
   activeKey: string;
   onChange: (key: string) => void;
+  /** Extra class on the chrome root (e.g. drawer inset). */
+  className?: string;
 };
 
 export function ActivityDayChrome({
   scopes,
   activeKey,
   onChange,
+  className,
 }: ActivityDayChromeProps) {
   const t = useTranslations("Feed");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -44,7 +47,13 @@ export function ActivityDayChrome({
   }
 
   return (
-    <div className="bruit-activity-scope">
+    <div
+      className={
+        className
+          ? `bruit-activity-scope ${className}`
+          : "bruit-activity-scope"
+      }
+    >
       <div
         ref={scrollerRef}
         className="bruit-history-days"

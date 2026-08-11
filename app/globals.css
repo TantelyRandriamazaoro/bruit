@@ -552,10 +552,70 @@ body {
   padding-bottom: 0.2rem;
 }
 
+.bruit-activity-scope.bruit-activity-scope-drawer {
+  margin-top: 0.15rem;
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  border-top: none;
+}
+
+.bruit-activity-scope.bruit-activity-scope-drawer .bruit-history-days {
+  padding-top: 0.25rem;
+  padding-bottom: 0.1rem;
+}
+
 @media (min-width: 768px) {
   .bruit-activity-scope .bruit-history-days {
     justify-content: center;
   }
+}
+
+.bruit-history-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: 0.9rem;
+  background: var(--bruit-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: inherit;
+}
+
+.bruit-history-card:hover {
+  background: color-mix(in srgb, var(--bruit-surface) 92%, var(--bruit-ink));
+}
+
+.bruit-history-card:active {
+  background: var(--bruit-row-active);
+}
+
+.bruit-history-card-icon {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--bruit-accent) 14%, var(--bruit-fill));
+  color: var(--bruit-accent);
+}
+
+.bruit-activity-history-sheet {
+  display: flex;
+  height: min(88dvh, 100%);
+  max-height: min(88dvh, 100%);
+  flex-direction: column;
+  border: 0.5px solid var(--bruit-sheet-border);
+  background: var(--bruit-sheet);
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(28px) saturate(1.35);
+  -webkit-backdrop-filter: blur(28px) saturate(1.35);
+}
+
+.dark .bruit-activity-history-sheet {
+  box-shadow: 0 -16px 56px rgba(0, 0, 0, 0.55);
 }
 
 .bruit-grouped-list {
