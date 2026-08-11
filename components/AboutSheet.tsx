@@ -1,6 +1,16 @@
 "use client";
 
-import { X } from "lucide-react";
+import {
+  Check,
+  MapPinned,
+  Monitor,
+  Moon,
+  Shield,
+  Sun,
+  Users,
+  Waves,
+  type LucideIcon,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -19,15 +29,52 @@ type AboutSheetProps = {
 };
 
 const APPEARANCE_OPTIONS = [
-  { id: "system", labelKey: "auto" },
-  { id: "light", labelKey: "light" },
-  { id: "dark", labelKey: "dark" },
+  { id: "system", labelKey: "auto", icon: Monitor },
+  { id: "light", labelKey: "light", icon: Sun },
+  { id: "dark", labelKey: "dark", icon: Moon },
 ] as const;
 
 const LANGUAGE_OPTIONS = [
   { id: "en", labelKey: "english" },
   { id: "fr", labelKey: "french" },
 ] as const;
+
+const ABOUT_ROWS = [
+  {
+    key: "bulletAnonymous",
+    icon: Shield,
+    tone: "teal",
+  },
+  {
+    key: "bulletLiveMap",
+    icon: MapPinned,
+    tone: "orange",
+  },
+  {
+    key: "bulletLingering",
+    icon: Waves,
+    tone: "blue",
+  },
+  {
+    key: "bulletVerify",
+    icon: Users,
+    tone: "green",
+  },
+] as const;
+
+function SettingsIcon({
+  icon: Icon,
+  tone,
+}: {
+  icon: LucideIcon;
+  tone: (typeof ABOUT_ROWS)[number]["tone"];
+}) {
+  return (
+    <span className={`bruit-settings-glyph bruit-settings-glyph--${tone}`} aria-hidden>
+      <Icon size={15} strokeWidth={2.1} />
+    </span>
+  );
+}
 
 export function AboutSheet({
   open,
@@ -51,12 +98,6 @@ export function AboutSheet({
 
   const activeTheme = mounted ? (theme ?? "system") : "system";
   const activeLocale = locale === "fr" ? "fr" : "en";
-  const bullets = [
-    t("bulletAnonymous"),
-    t("bulletLiveMap"),
-    t("bulletLingering"),
-    t("bulletVerify"),
-  ];
 
   const setLocale = (next: AppLocale) => {
     if (next === activeLocale) {
@@ -89,114 +130,122 @@ export function AboutSheet({
         >
           <Drawer.Handle className="bruit-drawer-handle mx-auto mt-2 mb-0.5" />
 
-          <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-1">
-            <div>
-              <Drawer.Title
-                id={titleId}
-                className="bruit-brand text-[1.35rem] font-semibold tracking-tight text-[var(--bruit-ink)]"
-              >
-                {t("title")}
-              </Drawer.Title>
-              <Drawer.Description
-                id={descriptionId}
-                className="mt-1 text-[0.88rem] font-medium leading-relaxed text-[var(--bruit-muted)]"
-              >
-                {t("body")}
-              </Drawer.Description>
-            </div>
+          <div className="bruit-settings-nav">
+            <span className="bruit-settings-nav-spacer" aria-hidden />
+            <Drawer.Title id={titleId} className="bruit-settings-nav-title">
+              {tCommon("settings")}
+            </Drawer.Title>
             <button
               type="button"
               onClick={onClose}
-              className="bruit-icon-btn cursor-pointer"
-              aria-label={tCommon("close")}
-            >
-              <X size={14} strokeWidth={2.2} aria-hidden />
-            </button>
-          </div>
-
-          <div className="flex flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <div className="bruit-sheet-card mb-3">
-              <div className="px-4 pb-1 pt-3 text-[0.72rem] font-semibold uppercase tracking-[0.04em] text-[var(--bruit-muted)]">
-                {t("appearance")}
-              </div>
-              <div
-                className="mx-3 mb-3 grid grid-cols-3 gap-1 rounded-[0.75rem] bg-[var(--bruit-fill)] p-1"
-                role="group"
-                aria-label={t("appearance")}
-              >
-                {APPEARANCE_OPTIONS.map((option) => {
-                  const selected = activeTheme === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setTheme(option.id)}
-                      className={`cursor-pointer rounded-[0.6rem] px-2 py-1.5 text-[0.82rem] font-semibold transition-colors duration-200 ${
-                        selected
-                          ? "bruit-segment-selected"
-                          : "bg-transparent text-[var(--bruit-muted)]"
-                      }`}
-                      aria-pressed={selected}
-                    >
-                      {t(option.labelKey)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bruit-sheet-card mb-3">
-              <div className="px-4 pb-1 pt-3 text-[0.72rem] font-semibold uppercase tracking-[0.04em] text-[var(--bruit-muted)]">
-                {t("language")}
-              </div>
-              <div
-                className="mx-3 mb-3 grid grid-cols-2 gap-1 rounded-[0.75rem] bg-[var(--bruit-fill)] p-1"
-                role="group"
-                aria-label={t("language")}
-                aria-busy={isPending || undefined}
-              >
-                {LANGUAGE_OPTIONS.map((option) => {
-                  const selected = activeLocale === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setLocale(option.id)}
-                      disabled={isPending}
-                      className={`cursor-pointer rounded-[0.6rem] px-2 py-1.5 text-[0.82rem] font-semibold transition-colors duration-200 disabled:cursor-not-allowed ${
-                        selected
-                          ? "bruit-segment-selected"
-                          : "bg-transparent text-[var(--bruit-muted)]"
-                      }`}
-                      aria-pressed={selected}
-                    >
-                      {t(option.labelKey)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <ul className="bruit-sheet-card mb-4">
-              {bullets.map((line, index) => (
-                <li key={line}>
-                  {index > 0 ? (
-                    <div className="ml-4 h-px bg-[var(--bruit-hairline)]" />
-                  ) : null}
-                  <div className="px-4 py-3 text-[0.9rem] font-medium leading-snug text-[var(--bruit-ink)]">
-                    {line}
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="bruit-primary-btn w-full cursor-pointer"
+              className="bruit-settings-done cursor-pointer"
             >
               {tCommon("done")}
             </button>
+          </div>
+
+          <Drawer.Description id={descriptionId} className="sr-only">
+            {t("body")}
+          </Drawer.Description>
+
+          <div className="bruit-settings-scroll px-4 pb-[max(1.35rem,env(safe-area-inset-bottom))]">
+            <section className="bruit-settings-section" aria-labelledby={`${titleId}-appearance`}>
+              <h2 id={`${titleId}-appearance`} className="bruit-settings-header">
+                {t("appearance")}
+              </h2>
+              <div className="bruit-sheet-card bruit-settings-card">
+                <div
+                  className="bruit-settings-segment"
+                  role="group"
+                  aria-label={t("appearance")}
+                >
+                  {APPEARANCE_OPTIONS.map((option) => {
+                    const selected = activeTheme === option.id;
+                    const Icon = option.icon;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setTheme(option.id)}
+                        className={`bruit-settings-segment-btn cursor-pointer ${
+                          selected ? "bruit-segment-selected" : ""
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <Icon size={18} strokeWidth={1.9} aria-hidden />
+                        <span>{t(option.labelKey)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="bruit-settings-footer">{t("appearanceFooter")}</p>
+            </section>
+
+            <section className="bruit-settings-section" aria-labelledby={`${titleId}-language`}>
+              <h2 id={`${titleId}-language`} className="bruit-settings-header">
+                {t("language")}
+              </h2>
+              <div
+                className="bruit-sheet-card bruit-settings-card"
+                role="radiogroup"
+                aria-label={t("language")}
+                aria-busy={isPending || undefined}
+              >
+                {LANGUAGE_OPTIONS.map((option, index) => {
+                  const selected = activeLocale === option.id;
+                  return (
+                    <div key={option.id}>
+                      {index > 0 ? (
+                        <div className="bruit-settings-separator" />
+                      ) : null}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setLocale(option.id)}
+                        disabled={isPending}
+                        className="bruit-settings-row cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <span className="bruit-settings-row-label">
+                          {t(option.labelKey)}
+                        </span>
+                        {selected ? (
+                          <Check
+                            size={18}
+                            strokeWidth={2.4}
+                            className="bruit-settings-check"
+                            aria-hidden
+                          />
+                        ) : (
+                          <span className="bruit-settings-check-slot" aria-hidden />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="bruit-settings-section" aria-labelledby={`${titleId}-about`}>
+              <h2 id={`${titleId}-about`} className="bruit-settings-header">
+                {t("title")}
+              </h2>
+              <ul className="bruit-sheet-card bruit-settings-card">
+                {ABOUT_ROWS.map((row, index) => (
+                  <li key={row.key}>
+                    {index > 0 ? (
+                      <div className="bruit-settings-separator bruit-settings-separator--inset" />
+                    ) : null}
+                    <div className="bruit-settings-info-row">
+                      <SettingsIcon icon={row.icon} tone={row.tone} />
+                      <p className="bruit-settings-info-text">{t(row.key)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="bruit-settings-footer">{t("body")}</p>
+            </section>
           </div>
         </Drawer.Content>
       </Drawer.Portal>

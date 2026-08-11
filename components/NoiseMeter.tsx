@@ -335,7 +335,11 @@ export function NoiseMeter({
             </div>
           </div>
 
-          <div className="bruit-meter-sheet-tools">
+          <div
+            className="bruit-meter-sheet-tools"
+            role="group"
+            aria-label={t("measure")}
+          >
             {audioUrl ? (
               <>
                 <audio
@@ -350,13 +354,20 @@ export function NoiseMeter({
                   disabled={busy}
                   onClick={togglePlayback}
                   className="bruit-meter-tool-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={
+                    playing ? t("measurePause") : t("measurePlayAria")
+                  }
                 >
-                  {playing ? (
-                    <Pause size={15} strokeWidth={2.2} aria-hidden />
-                  ) : (
-                    <Play size={15} strokeWidth={2.2} aria-hidden />
-                  )}
-                  {playing ? t("measurePause") : t("measurePlay")}
+                  <span className="bruit-meter-tool-icon" aria-hidden>
+                    {playing ? (
+                      <Pause size={18} strokeWidth={2.1} />
+                    ) : (
+                      <Play size={18} strokeWidth={2.1} />
+                    )}
+                  </span>
+                  <span className="bruit-meter-tool-label">
+                    {playing ? t("measurePause") : t("measurePlay")}
+                  </span>
                 </button>
               </>
             ) : null}
@@ -365,9 +376,12 @@ export function NoiseMeter({
               disabled={busy}
               onClick={() => meter.reset()}
               className="bruit-meter-tool-btn cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={t("measureAgainAria")}
             >
-              <RotateCcw size={15} strokeWidth={2.2} aria-hidden />
-              {t("measureAgain")}
+              <span className="bruit-meter-tool-icon" aria-hidden>
+                <RotateCcw size={18} strokeWidth={2.1} />
+              </span>
+              <span className="bruit-meter-tool-label">{t("measureAgain")}</span>
             </button>
           </div>
         </>

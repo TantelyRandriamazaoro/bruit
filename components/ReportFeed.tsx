@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, ChevronRight, Ear, List, Trash2 } from "lucide-react";
+import { Check, ChevronRight, List, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityDayChrome } from "@/components/ActivityDayChrome";
 import {
-  ClusterDrawer,
-  type ClusterDrawerSelection,
-} from "@/components/ClusterDrawer";
+  ActivityDrawer,
+  type ActivityDrawerSelection,
+} from "@/components/ActivityDrawer";
+import { ActivityDayChrome } from "@/components/ActivityDayChrome";
 import {
   ACTIVITY_SCOPE_24H,
   buildActivityScopes,
@@ -48,7 +48,6 @@ type ReportFeedProps = {
   myReports: NoiseReport[];
   userLocation: { lat: number; lng: number } | null;
   onReport: () => void;
-  onSelectReport?: (report: NoiseReport) => void;
   onShowOnMap?: (report: NoiseReport) => void;
   /** Open the confirmation drawer to corroborate a report group. */
   onReportAgain?: (cluster: ReportCluster) => void;
@@ -75,14 +74,12 @@ function dominantCategory(reports: NoiseReport[]): string | null | undefined {
   return best;
 }
 
-function Chevron({ expanded }: { expanded?: boolean }) {
+function Chevron() {
   return (
     <ChevronRight
       size={14}
       strokeWidth={2}
-      className={`shrink-0 text-[var(--bruit-hairline-strong)] transition-transform duration-200 ${
-        expanded ? "rotate-90" : ""
-      }`}
+      className="shrink-0 text-[var(--bruit-hairline-strong)]"
       aria-hidden
     />
   );
@@ -113,17 +110,23 @@ function clusterIsConfirmed(reports: NoiseReport[]): boolean {
   return reports.some((report) => isCommunityConfirmed(report));
 }
 
+function clusterFromReport(report: NoiseReport): ReportCluster {
+  return {
+    id: report.id,
+    reports: [report],
+    lat: report.lat,
+    lng: report.lng,
+    cellKey: areaCellKey(report.lat, report.lng),
+  };
+}
+
 function ClusterRow({
   cluster,
   areaName,
   distanceLabel,
-  nearby,
   now,
   timeMessages,
-  onOpenReports,
-  onShowOnMap,
-  onSelectReport,
-  onReportAgain,
+  onOpen,
   t,
   tCategories,
   tIntensities,
@@ -131,13 +134,9 @@ function ClusterRow({
   cluster: ReportCluster;
   areaName: string | null;
   distanceLabel?: string | null;
-  nearby?: boolean;
   now: number;
   timeMessages: ReturnType<typeof relativeTimeMessages>;
-  onOpenReports: () => void;
-  onShowOnMap?: (report: NoiseReport) => void;
-  onSelectReport?: (report: NoiseReport) => void;
-  onReportAgain?: (cluster: ReportCluster) => void;
+  onOpen: () => void;
   t: ReturnType<typeof useTranslations<"Feed">>;
   tCategories: ReturnType<typeof useTranslations<"Categories">>;
   tIntensities: ReturnType<typeof useTranslations<"Intensities">>;
@@ -161,124 +160,27 @@ function ClusterRow({
   const hot = isHotReportGroupFromReports(cluster.reports, now);
   const iconStyle = intensityIconStyle(level, { hot });
 
-  const goToMap = () => {
-    if (onShowOnMap) {
-      onShowOnMap(newest);
-      return;
-    }
-    onSelectReport?.(newest);
-  };
-
-  if (isGroup) {
-    return (
-      <div className="bruit-feed-row bruit-feed-row-group items-start">
-        <span
-          className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          style={iconStyle}
-        >
-          <NoiseCategoryIcon
-            category={category}
-            size={17}
-            strokeWidth={1.7}
-          />
-          <span className="bruit-cluster-badge" aria-hidden>
-            {cluster.reports.length}
-          </span>
-        </span>
-        <div className="min-w-0 flex-1 py-0.5">
-          <button
-            type="button"
-            onClick={goToMap}
-            className="flex w-full cursor-pointer items-start gap-2 border-none bg-transparent p-0 text-left"
-            aria-label={t("showOnMap")}
-          >
-            <span className="min-w-0 flex-1">
-              <span className="flex items-baseline justify-between gap-3">
-                <span className="truncate text-[1.02rem] font-semibold tracking-tight text-[var(--bruit-ink)]">
-                  {areaName ?? t("lookingUpArea")}
-                  {confirmed && verifiedLabel ? (
-                    <>
-                      {" "}
-                      <VerifiedMark label={verifiedLabel} />
-                    </>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-[0.78rem] font-medium tabular-nums text-[var(--bruit-muted)]">
-                  {formatRelativeTime(newest.created_at, timeMessages, now)}
-                </span>
-              </span>
-              <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
-                {distanceLabel ? (
-                  <>
-                    {distanceLabel}
-                    <MetaDot />
-                  </>
-                ) : null}
-                {categoryLabel(tCategories, category)}
-              </span>
-            </span>
-            <span className="mt-1.5 shrink-0">
-              <Chevron />
-            </span>
-          </button>
-          <div
-            className="bruit-feed-chips"
-            role="group"
-            aria-label={t("groupActions")}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                if (onReportAgain) {
-                  onReportAgain(cluster);
-                  return;
-                }
-                onSelectReport?.(newest);
-              }}
-              className="bruit-feed-chip cursor-pointer"
-              aria-label={t("reportAgainAria")}
-            >
-              <Ear size={13} strokeWidth={2.1} aria-hidden />
-              {t("reportAgain")}
-            </button>
-            <button
-              type="button"
-              onClick={onOpenReports}
-              className="bruit-feed-chip cursor-pointer"
-            >
-              {t("reportsCount", { count: cluster.reports.length })}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <button
       type="button"
-      onClick={() => {
-        if (nearby) {
-          onSelectReport?.(newest);
-          return;
-        }
-        if (onShowOnMap) {
-          onShowOnMap(newest);
-          return;
-        }
-        onSelectReport?.(newest);
-      }}
+      onClick={onOpen}
       className="bruit-feed-row w-full cursor-pointer text-left transition-colors duration-150"
+      aria-label={t("openDetails")}
     >
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
         style={iconStyle}
       >
         <NoiseCategoryIcon
-          category={newest.category}
+          category={category}
           size={17}
           strokeWidth={1.7}
         />
+        {isGroup ? (
+          <span className="bruit-cluster-badge" aria-hidden>
+            {cluster.reports.length}
+          </span>
+        ) : null}
       </span>
       <span className="min-w-0 flex-1 py-0.5">
         <span className="flex items-baseline justify-between gap-3">
@@ -302,9 +204,9 @@ function ClusterRow({
               <MetaDot />
             </>
           ) : null}
-          {categoryLabel(tCategories, newest.category)}
+          {categoryLabel(tCategories, category)}
           <MetaDot />
-          {intensityLabel(tIntensities, newest.intensity)}
+          {intensityLabel(tIntensities, level)}
           {typeof newest.db_avg === "number" ? (
             <>
               <MetaDot />
@@ -323,7 +225,6 @@ export function ReportFeed({
   myReports,
   userLocation,
   onReport,
-  onSelectReport,
   onShowOnMap,
   onReportAgain,
   onDeleteReport,
@@ -339,8 +240,8 @@ export function ReportFeed({
   const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
   const [scopeKey, setScopeKey] = useState(ACTIVITY_SCOPE_24H);
-  const [clusterSelection, setClusterSelection] =
-    useState<ClusterDrawerSelection | null>(null);
+  const [activitySelection, setActivitySelection] =
+    useState<ActivityDrawerSelection | null>(null);
   const [areaLabels, setAreaLabels] = useState<AreaLabelMap>({});
   const timeMessages = relativeTimeMessages(tTime);
 
@@ -492,28 +393,11 @@ export function ReportFeed({
     areaLabels[areaCellKey(point.lat, point.lng)] ??
     null;
 
-  const openClusterDrawer = (
-    cluster: ReportCluster,
-    options?: { distanceLabel?: string | null; nearby?: boolean },
-  ) => {
-    setClusterSelection({
+  const openActivity = (cluster: ReportCluster) => {
+    setActivitySelection({
       cluster,
       areaName: areaNameFor(cluster),
-      distanceLabel: options?.distanceLabel ?? null,
-      nearby: Boolean(options?.nearby),
     });
-  };
-
-  const activateReport = (report: NoiseReport, nearby: boolean) => {
-    if (nearby) {
-      onSelectReport?.(report);
-      return;
-    }
-    if (onShowOnMap) {
-      onShowOnMap(report);
-      return;
-    }
-    onSelectReport?.(report);
   };
 
   const regionTitle = (region: string) =>
@@ -571,6 +455,14 @@ export function ReportFeed({
                   {scopedMyReports.map((report, index) => {
                     const deleting = deletingReportId === report.id;
                     const areaName = areaNameFor(report);
+                    const distanceLabel =
+                      userLocation
+                        ? t("away", {
+                            distance: formatDistanceKm(
+                              distanceMeters(userLocation, report) / 1000,
+                            ),
+                          })
+                        : null;
                     return (
                       <li key={report.id}>
                         {index > 0 ? (
@@ -579,15 +471,11 @@ export function ReportFeed({
                         <div className="flex w-full items-stretch">
                           <button
                             type="button"
-                            onClick={() => {
-                              const nearby = userLocation
-                                ? distanceMeters(userLocation, report) /
-                                    1000 <
-                                  NEARBY_ACTIVITY_KM
-                                : false;
-                              activateReport(report, nearby);
-                            }}
+                            onClick={() =>
+                              openActivity(clusterFromReport(report))
+                            }
                             className="bruit-feed-row min-w-0 flex-1 cursor-pointer text-left transition-colors duration-150"
+                            aria-label={t("openDetails")}
                           >
                             <span
                               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
@@ -618,24 +506,24 @@ export function ReportFeed({
                                 </span>
                               </span>
                               <span className="mt-0.5 block truncate text-[0.84rem] font-medium text-[var(--bruit-muted)]">
+                                {distanceLabel ? (
+                                  <>
+                                    {distanceLabel}
+                                    <MetaDot />
+                                  </>
+                                ) : null}
                                 {categoryLabel(tCategories, report.category)}
-                                <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
-                                  ·
-                                </span>
+                                <MetaDot />
                                 {intensityLabel(tIntensities, report.intensity)}
                                 {typeof report.db_avg === "number" ? (
                                   <>
-                                    <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
-                                      ·
-                                    </span>
+                                    <MetaDot />
                                     {Math.round(report.db_avg)} dB
                                   </>
                                 ) : null}
                                 {isCommunityConfirmed(report) ? (
                                   <>
-                                    <span className="mx-1.5 text-[var(--bruit-hairline-strong)]">
-                                      ·
-                                    </span>
+                                    <MetaDot />
                                     <VerifiedMark
                                       label={t("confirmedShort", {
                                         count: hearCount(report),
@@ -728,22 +616,9 @@ export function ReportFeed({
                             distanceLabel={t("away", {
                               distance: formatDistanceKm(cluster.distanceKm),
                             })}
-                            nearby
                             now={now}
                             timeMessages={timeMessages}
-                            onOpenReports={() =>
-                              openClusterDrawer(cluster, {
-                                distanceLabel: t("away", {
-                                  distance: formatDistanceKm(
-                                    cluster.distanceKm,
-                                  ),
-                                }),
-                                nearby: true,
-                              })
-                            }
-                            onShowOnMap={onShowOnMap}
-                            onSelectReport={onSelectReport}
-                            onReportAgain={onReportAgain}
+                            onOpen={() => openActivity(cluster)}
                             t={t}
                             tCategories={tCategories}
                             tIntensities={tIntensities}
@@ -786,18 +661,9 @@ export function ReportFeed({
                                 cluster={cluster}
                                 areaName={areaNameFor(cluster)}
                                 distanceLabel={distanceLabel}
-                                nearby={false}
                                 now={now}
                                 timeMessages={timeMessages}
-                                onOpenReports={() =>
-                                  openClusterDrawer(cluster, {
-                                    distanceLabel,
-                                    nearby: false,
-                                  })
-                                }
-                                onShowOnMap={onShowOnMap}
-                                onSelectReport={onSelectReport}
-                                onReportAgain={onReportAgain}
+                                onOpen={() => openActivity(cluster)}
                                 t={t}
                                 tCategories={tCategories}
                                 tIntensities={tIntensities}
@@ -815,15 +681,16 @@ export function ReportFeed({
         </div>
       </div>
 
-      <ClusterDrawer
-        selection={clusterSelection}
+      <ActivityDrawer
+        selection={activitySelection}
+        userLocation={userLocation}
         container={container}
-        onClose={() => setClusterSelection(null)}
-        onSelectReport={(report) => {
-          const nearby = clusterSelection?.nearby ?? false;
-          setClusterSelection(null);
-          activateReport(report, nearby);
+        onClose={() => setActivitySelection(null)}
+        onShowOnMap={(report) => {
+          setActivitySelection(null);
+          onShowOnMap?.(report);
         }}
+        onReportAgain={onReportAgain}
       />
     </section>
   );

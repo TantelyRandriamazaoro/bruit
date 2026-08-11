@@ -393,16 +393,6 @@ export function HomeClient() {
     setMeasureOpen(true);
   };
 
-  const openIncident = useCallback((report: NoiseReport) => {
-    setStatus(null);
-    setSelectedPoliceStation(null);
-    setDrawerOpen(false);
-    setMeasureOpen(false);
-    setAboutOpen(false);
-    setVicinityContext(null);
-    setSelectedIncident(report);
-  }, []);
-
   const openReportAgain = useCallback(
     (cluster: ReportCluster) => {
       const vicinity = vicinityFromCluster(cluster, userLocation);
@@ -529,6 +519,11 @@ export function HomeClient() {
   const recentReports = useMemo(
     () => filterReportsSince(reports),
     [reports],
+  );
+
+  const feedCount24h = useMemo(
+    () => filterReportsSince(reports, 1, now).length,
+    [reports, now],
   );
 
   const liveMapReports = useMemo(
@@ -832,7 +827,6 @@ export function HomeClient() {
           deletingReportId={deletingReportId}
           container={shellEl}
           onReport={() => openDrawer()}
-          onSelectReport={openIncident}
           onShowOnMap={openHotspotOnMap}
           onReportAgain={openReportAgain}
           onDeleteReport={(report) => void handleDeleteReport(report)}
@@ -908,7 +902,7 @@ export function HomeClient() {
         onMeasure={openMeasure}
         cooldownMs={cooldownMs}
         busy={busy && !drawerOpen}
-        feedCount={recentReports.length}
+        feedCount={feedCount24h}
         statusMessage={overlayOpen ? null : (status?.message ?? null)}
         statusTone={status?.tone ?? "neutral"}
         onDismissStatus={() => setStatus(null)}

@@ -167,12 +167,27 @@ export function ReportDrawer({
             </div>
 
             <div className="mt-5">
-              <NoiseMeter
-                active={open}
-                busy={busy}
-                seedReading={seedReading}
-                onReadingChange={handleReadingChange}
-              />
+              <div className="mb-2 flex items-baseline justify-between gap-3 px-0.5">
+                <p className="text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
+                  {t("measure")}
+                </p>
+                <p className="text-[0.72rem] font-semibold text-[var(--bruit-muted)]">
+                  {t("measureOptional")}
+                </p>
+              </div>
+              <p className="mb-2.5 max-w-md px-0.5 text-[0.84rem] font-medium leading-snug text-[var(--bruit-muted)]">
+                {t("measureIntro")}
+              </p>
+              <div className="bruit-noise-meter-card">
+                <NoiseMeter
+                  active={open}
+                  busy={busy}
+                  seedReading={seedReading}
+                  showHeading={false}
+                  variant="sheet"
+                  onReadingChange={handleReadingChange}
+                />
+              </div>
             </div>
 
             <p className="mb-2 mt-5 text-[0.8rem] font-semibold text-[var(--bruit-muted)]">
