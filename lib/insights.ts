@@ -6,6 +6,10 @@ import {
   peakDbAmong,
 } from "@/lib/decibel";
 import {
+  regionForPoint,
+  UNKNOWN_REGION,
+} from "@/lib/madagascar-regions";
+import {
   NOISE_CATEGORIES,
   NOISE_INTENSITIES,
   intensityWeight,
@@ -133,6 +137,27 @@ export type MunicipalInsights = {
   avgDb: number | null;
   peakDb: number | null;
   measuredCount: number;
+};
+
+/** Glanceable regional condition — Weather-app style situation. */
+export type SituationTone = "quiet" | "moderate" | "elevated" | "severe";
+
+export type ConfidenceLevel = "limited" | "moderate" | "high";
+
+export type RegionalBrief = MunicipalInsights & {
+  region: string;
+  situation: SituationTone;
+  deltaPercent: number | null;
+  attentionCount: number;
+  topCategory: HotspotCategoryShare | null;
+  categories: HotspotCategoryShare[];
+  confirmationCount: number;
+  quietMarkCount: number;
+  confidence: ConfidenceLevel;
+  confidenceHighAreas: number;
+  confidenceModerateAreas: number;
+  confidenceLimitedAreas: number;
+  priorityAreas: NoiseHotspot[];
 };
 
 const WEEKDAY_KEYS = ["0", "1", "2", "3", "4", "5", "6"] as const;
@@ -678,5 +703,241 @@ export function buildMunicipalInsights(
     avgDb: averageDb(currentReports),
     peakDb: peakDbAmong(currentReports),
     measuredCount: measuredCount(currentReports),
+  };
+}
+
+export function filterReportsByRegion(
+  reports: NoiseReport[],
+  region: string,
+): NoiseReport[] {
+  return reports.filter((report) => regionForPoint(report) === region);
+}
+
+/** Regions that currently have reports, user region first when present. */
+export function listActiveRegions(
+  reports: NoiseReport[],
+  userLocation: { lat: number; lng: number } | null = null,
+): string[] {
+  const counts = new Map<string, number>();
+  for (const report of reports) {
+    const region = regionForPoint(report);
+    counts.set(region, (counts.get(region) ?? 0) + 1);
+  }
+
+  const userRegion = userLocation ? regionForPoint(userLocation) : null;
+  if (userRegion && userRegion !== UNKNOWN_REGION && !counts.has(userRegion)) {
+    counts.set(userRegion, 0);
+  }
+
+  return [...counts.keys()].sort((a, b) => {
+    if (userRegion) {
+      if (a === userRegion) {
+        return -1;
+      }
+      if (b === userRegion) {
+        return 1;
+      }
+    }
+    if (a === UNKNOWN_REGION) {
+      return 1;
+    }
+    if (b === UNKNOWN_REGION) {
+      return -1;
+    }
+    return (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || a.localeCompare(b);
+  });
+}
+
+function hotspotConfirmations(hotspot: NoiseHotspot): number {
+  return hotspot.reportsCurrent.reduce(
+    (sum, report) => sum + (report.hear_count ?? 0),
+    0,
+  );
+}
+
+function classifyAreaConfidence(hotspot: NoiseHotspot): ConfidenceLevel {
+  const confirms = hotspotConfirmations(hotspot);
+  if (
+    hotspot.currentCount >= 5 &&
+    hotspot.distinctDays >= 3 &&
+    (confirms >= 3 || hotspot.measuredCount >= 2)
+  ) {
+    return "high";
+  }
+  if (hotspot.currentCount >= 2 && hotspot.distinctDays >= 2) {
+    return "moderate";
+  }
+  return "limited";
+}
+
+function classifySituation(input: {
+  currentTotal: number;
+  previousTotal: number;
+  hotspotCount: number;
+  escalatingCount: number;
+  recurringCount: number;
+  attentionCount: number;
+}): SituationTone {
+  const {
+    currentTotal,
+    previousTotal,
+    hotspotCount,
+    escalatingCount,
+    recurringCount,
+    attentionCount,
+  } = input;
+
+  if (currentTotal === 0 && hotspotCount === 0) {
+    return "quiet";
+  }
+
+  const deltaPercent =
+    previousTotal > 0
+      ? ((currentTotal - previousTotal) / previousTotal) * 100
+      : currentTotal > 0
+        ? 100
+        : 0;
+
+  if (
+    escalatingCount >= 3 ||
+    (hotspotCount >= 8 && deltaPercent >= 40) ||
+    (attentionCount >= 6 && deltaPercent >= 25)
+  ) {
+    return "severe";
+  }
+
+  if (
+    escalatingCount >= 1 ||
+    recurringCount >= 3 ||
+    attentionCount >= 3 ||
+    deltaPercent >= 20 ||
+    hotspotCount >= 4
+  ) {
+    return "elevated";
+  }
+
+  if (currentTotal <= 2 && hotspotCount <= 1) {
+    return "quiet";
+  }
+
+  return "moderate";
+}
+
+/**
+ * Municipal Weather-style brief for one faritra (or elsewhere).
+ * Reuses hotspot clustering and week-over-week municipal math.
+ */
+export function buildRegionalBrief(
+  reports: NoiseReport[],
+  region: string,
+  now = Date.now(),
+  locale = "en",
+  labels?: InsightLabelMessages,
+): RegionalBrief {
+  const scoped = filterReportsByRegion(reports, region);
+  const base = buildMunicipalInsights(scoped, now, locale, labels);
+  const currentStart = now - HEATMAP_DAYS * 24 * 60 * 60 * 1000;
+  const currentReports = scoped.filter((report) => {
+    const t = new Date(report.created_at).getTime();
+    return Number.isFinite(t) && t >= currentStart;
+  });
+
+  const categories = categoryBreakdown(currentReports);
+  const confirmationCount = currentReports.reduce(
+    (sum, report) => sum + (report.hear_count ?? 0),
+    0,
+  );
+  const quietMarkCount = currentReports.reduce(
+    (sum, report) => sum + (report.quiet_count ?? 0),
+    0,
+  );
+
+  const active = base.hotspots.filter((item) => item.currentCount > 0);
+  let confidenceHighAreas = 0;
+  let confidenceModerateAreas = 0;
+  let confidenceLimitedAreas = 0;
+  for (const hotspot of active) {
+    const level = classifyAreaConfidence(hotspot);
+    if (level === "high") {
+      confidenceHighAreas += 1;
+    } else if (level === "moderate") {
+      confidenceModerateAreas += 1;
+    } else {
+      confidenceLimitedAreas += 1;
+    }
+  }
+
+  const attentionCount = active.filter(
+    (item) =>
+      item.status === "escalating" ||
+      item.status === "recurring" ||
+      item.status === "persistent",
+  ).length;
+
+  const priorityAreas = [...active]
+    .sort((a, b) => {
+      const rank = (status: HotspotStatus) => {
+        if (status === "escalating") {
+          return 0;
+        }
+        if (status === "recurring" || status === "persistent") {
+          return 1;
+        }
+        if (status === "new") {
+          return 2;
+        }
+        return 3;
+      };
+      const byStatus = rank(a.status) - rank(b.status);
+      if (byStatus !== 0) {
+        return byStatus;
+      }
+      return b.priority - a.priority;
+    })
+    .slice(0, 8);
+
+  const confidence: ConfidenceLevel =
+    confidenceHighAreas >= 3 ||
+    (confidenceHighAreas >= 1 && confidenceModerateAreas >= 2)
+      ? "high"
+      : confidenceModerateAreas + confidenceHighAreas >= 2 ||
+          currentReports.length >= 12
+        ? "moderate"
+        : "limited";
+
+  const deltaPercent =
+    base.previousTotal > 0
+      ? Math.round(
+          ((base.currentTotal - base.previousTotal) / base.previousTotal) *
+            100,
+        )
+      : base.currentTotal > 0
+        ? null
+        : 0;
+
+  const situation = classifySituation({
+    currentTotal: base.currentTotal,
+    previousTotal: base.previousTotal,
+    hotspotCount: base.hotspotCount,
+    escalatingCount: base.escalatingCount,
+    recurringCount: base.recurringCount,
+    attentionCount,
+  });
+
+  return {
+    ...base,
+    region,
+    situation,
+    deltaPercent,
+    attentionCount,
+    topCategory: categories[0] ?? null,
+    categories,
+    confirmationCount,
+    quietMarkCount,
+    confidence,
+    confidenceHighAreas,
+    confidenceModerateAreas,
+    confidenceLimitedAreas,
+    priorityAreas,
   };
 }
