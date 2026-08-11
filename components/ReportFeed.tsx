@@ -1,18 +1,13 @@
 "use client";
 
 import { Check, ChevronRight, List, Trash2 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityDrawer,
   type ActivityDrawerSelection,
 } from "@/components/ActivityDrawer";
-import { ActivityDayChrome } from "@/components/ActivityDayChrome";
-import {
-  ACTIVITY_SCOPE_24H,
-  buildActivityScopes,
-  filterReportsByScope,
-} from "@/lib/activity-scope";
+import { filterReportsLast24h } from "@/lib/activity-scope";
 import { areaCellKey, type AreaLabelMap } from "@/lib/area-cell";
 import { loadAreaLabelsForPoints } from "@/lib/area-labels";
 import {
@@ -233,13 +228,10 @@ export function ReportFeed({
   container = null,
 }: ReportFeedProps) {
   const t = useTranslations("Feed");
-  const tCommon = useTranslations("Common");
   const tCategories = useTranslations("Categories");
   const tIntensities = useTranslations("Intensities");
   const tTime = useTranslations("Time");
-  const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
-  const [scopeKey, setScopeKey] = useState(ACTIVITY_SCOPE_24H);
   const [activitySelection, setActivitySelection] =
     useState<ActivityDrawerSelection | null>(null);
   const [areaLabels, setAreaLabels] = useState<AreaLabelMap>({});
@@ -250,48 +242,14 @@ export function ReportFeed({
     return () => window.clearInterval(id);
   }, []);
 
-  const scopeLabels = useMemo(
-    () => ({
-      rolling24h: t("rolling24h"),
-      rolling24hShort: t("rolling24hShort"),
-      today: tCommon("today"),
-      yesterday: tCommon("yesterday"),
-    }),
-    [t, tCommon],
-  );
-
-  const scopes = useMemo(
-    () => buildActivityScopes(reports, scopeLabels, locale, now),
-    [reports, scopeLabels, locale, now],
-  );
-
-  const activeScope = useMemo(
-    () =>
-      scopes.find((scope) => scope.key === scopeKey) ??
-      scopes.find((scope) => scope.key === ACTIVITY_SCOPE_24H) ??
-      scopes[scopes.length - 1] ??
-      null,
-    [scopes, scopeKey],
-  );
-
-  useEffect(() => {
-    if (scopes.length === 0) {
-      return;
-    }
-    if (!scopes.some((scope) => scope.key === scopeKey)) {
-      setScopeKey(ACTIVITY_SCOPE_24H);
-    }
-  }, [scopes, scopeKey]);
-
   const scopedReports = useMemo(
-    () => (activeScope ? filterReportsByScope(reports, activeScope) : reports),
-    [reports, activeScope],
+    () => filterReportsLast24h(reports, now),
+    [reports, now],
   );
 
   const scopedMyReports = useMemo(
-    () =>
-      activeScope ? filterReportsByScope(myReports, activeScope) : myReports,
-    [myReports, activeScope],
+    () => filterReportsLast24h(myReports, now),
+    [myReports, now],
   );
 
   const clusters = useMemo(
@@ -415,7 +373,6 @@ export function ReportFeed({
     void onDeleteReport(report);
   };
 
-  const periodLabel = activeScope?.label ?? t("rolling24h");
   const hasAnyInScope = scopedReports.length > 0;
   const myReportsEmptyCopy =
     myReports.length === 0 ? t("myReportsEmpty") : t("myReportsEmptyScoped");
@@ -427,13 +384,8 @@ export function ReportFeed({
           {t("title")}
         </h1>
         <p className="mt-1 max-w-sm text-[0.94rem] font-medium leading-snug text-[var(--bruit-muted)]">
-          {t("subtitleScoped", { period: periodLabel })}
+          {t("subtitleScoped", { period: t("rolling24h") })}
         </p>
-        <ActivityDayChrome
-          scopes={scopes}
-          activeKey={activeScope?.key ?? ACTIVITY_SCOPE_24H}
-          onChange={setScopeKey}
-        />
       </header>
 
       <div className="px-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:pb-[calc(var(--bruit-tabbar-space)+var(--bruit-fab-space)+1rem)]">
@@ -572,7 +524,9 @@ export function ReportFeed({
                   {reports.length === 0 ? t("emptyTitle") : t("emptyScopedTitle")}
                 </p>
                 <p className="mt-1.5 text-[0.92rem] font-medium leading-relaxed text-[var(--bruit-muted)]">
-                  {reports.length === 0 ? t("emptyBody") : t("emptyScopedBody")}
+                  {reports.length === 0
+                    ? t("emptyBody")
+                    : t("empty24hBody")}
                 </p>
                 <button
                   type="button"
