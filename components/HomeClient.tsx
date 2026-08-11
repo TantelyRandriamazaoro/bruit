@@ -841,6 +841,7 @@ export function HomeClient() {
           canReport={configured && cooldownMs <= 0}
           onReport={() => openDrawer()}
           onOpenHotspot={openHotspotOnMap}
+          onReportAgain={openReportAgain}
         />
       ) : null}
 
