@@ -2,11 +2,13 @@ import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import en from "../messages/en.json";
 import fr from "../messages/fr.json";
+import mg from "../messages/mg.json";
 import { LOCALE_COOKIE, resolveLocale } from "./locales";
 
 const messagesByLocale = {
   en,
   fr,
+  mg,
 } as const;
 
 export default getRequestConfig(async () => {
