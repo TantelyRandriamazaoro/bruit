@@ -1,4 +1,4 @@
-export const locales = ["en", "fr"] as const;
+export const locales = ["en", "fr", "mg"] as const;
 
 export type AppLocale = (typeof locales)[number];
 
@@ -8,7 +8,7 @@ export const defaultLocale: AppLocale = "en";
 export const LOCALE_COOKIE = "bruit-locale";
 
 export function isAppLocale(value: string | null | undefined): value is AppLocale {
-  return value === "en" || value === "fr";
+  return value === "en" || value === "fr" || value === "mg";
 }
 
 /** Pick en/fr from an Accept-Language header (device language). */
@@ -38,6 +38,9 @@ export function localeFromAcceptLanguage(
     }
     if (tag.startsWith("fr")) {
       return "fr";
+    }
+    if (tag.startsWith("mg")) {
+      return "mg";
     }
   }
 

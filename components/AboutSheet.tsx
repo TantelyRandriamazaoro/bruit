@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Drawer } from "vaul";
 import {
+  isAppLocale,
   setLocaleCookie,
   type AppLocale,
 } from "@/i18n/locales";
@@ -37,6 +38,7 @@ const APPEARANCE_OPTIONS = [
 const LANGUAGE_OPTIONS = [
   { id: "en", labelKey: "english" },
   { id: "fr", labelKey: "french" },
+  { id: "mg", labelKey: "malagasy" },
 ] as const;
 
 const ABOUT_ROWS = [
@@ -97,7 +99,7 @@ export function AboutSheet({
   }, []);
 
   const activeTheme = mounted ? (theme ?? "system") : "system";
-  const activeLocale = locale === "fr" ? "fr" : "en";
+  const activeLocale: AppLocale = isAppLocale(locale) ? locale : "en";
 
   const setLocale = (next: AppLocale) => {
     if (next === activeLocale) {
